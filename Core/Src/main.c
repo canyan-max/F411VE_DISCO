@@ -57,7 +57,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+static volatile uint8_t dma_tx_done = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,26 +118,187 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   elog_init_handler();
-  g_cs43lxxx_hal_ops.pf_power_control(0);
-  g_cs43lxxx_hal_ops.pf_delay_ms(5);
-  g_cs43lxxx_hal_ops.pf_power_control(1);
-  g_cs43lxxx_hal_ops.pf_delay_ms(5);
-  uint8_t data = 0;
-  cs43lxxx_status_t ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT, 0x01, &data, 1);
-  
-  log_i("ret=%d rawdata=%d", ret, data);
-  data = data&0xf8U;
-  log_i("cs43l22 read data: 0x%02x", data);
-  data = 0x81;
-  g_cs43lxxx_hal_ops.pf_i2c_write_reg(CS43XXX_I2C_ADDR_7BIT, CS43L22_REG_CLOCKING_CTL, &data, 1);
-  data = 0x91;
-  g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT, CS43L22_REG_CLOCKING_CTL, &data, 1);
-  log_i("cs43l22 read data: 0x%02x", data);
-  data = 0x05;
-  g_cs43lxxx_hal_ops.pf_i2c_write_reg(CS43XXX_I2C_ADDR_7BIT, CS43L22_REG_POWER_CTL2, &data, 1);
-  data = 0x09;
-  g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT, CS43L22_REG_POWER_CTL2, &data, 1);
-  log_i("cs43l22 read data: 0x%02x", data);
+
+  /* Reconfigure I2S3 GPIOs: PC7(MCK), PC10(SCK), PC12(SD)
+   * 1) Force MODER to AF — raw write was unreliable for PC12
+   * 2) Bump speed to HIGH — MCK=24.576MHz, SCK=6.144MHz, LOW(~2MHz) is insufficient
+   */
+  /* Power-on reset: Audio_RST low → delay → high → delay */
+
+
+  /* Test cs43lxxx_instruct */
+  /* Step 2: 1kHz sine @ 96kHz SR → 96 samples/cycle, pre-computed LUT.
+*         Amplitude ~50% of full-scale (16384 / 32767). */
+static const int16_t sine_1khz[96] = {
+      0,  1072,  2139,  3196,  4240,  5266,  6270,  7247,
+  8192,  9102,  9972, 10799, 11579, 12309, 12985, 13604,
+  14163, 14659, 15090, 15454, 15749, 15973, 16126, 16206,
+  16213, 16147, 16008, 15797, 15515, 15164, 14744, 14259,
+  13711, 13102, 12436, 11716, 10946, 10130,  9271,  8374,
+  7444,  6484,  5499,  4494,  3473,  2441,  1403,   363,
+  -673, -1701, -2716, -3713, -4688, -5636, -6553, -7435,
+  -8278, -9077, -9829,-10531,-11179,-11770,-12300,-12767,
+-13168,-13501,-13763,-13954,-14071,-14115,-14085,-13982,
+-13805,-13557,-13239,-12852,-12400,-11885,-11310,-10680,
+  -9997, -9266, -8492, -7678, -6828, -5948, -5042, -4114,
+  -3170, -2214, -1251,  -286
+};
+  cs43xxx_drv_t      cs43l22_drv   = {0};
+  cs43lxxx_status_t instruct_ret = cs43lxxx_instruct(&cs43l22_drv,
+                                                      &g_cs43lxxx_hal_ops,
+                                                      CS43XXX_I2C_ADDR_7BIT,
+                                                      OUTPUT_DEVICE_AUTO);
+  log_i("instruct ret=%d, is_init=%d", instruct_ret, cs43l22_drv.is_init);
+
+  /* Verify: read back key registers to confirm writes took effect. */
+  if(CS43LXXX_STATUS_OK == instruct_ret)
+  {
+      uint8_t           rd_val  = 0;
+      cs43lxxx_status_t rd_ret  = CS43LXXX_STATUS_OK;
+
+      /* Chip ID */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_ID, &rd_val, 1);
+      log_i("[verify] ID(0x%02X) ret=%d val=0x%02X mask=0x%02X",
+            CS43L22_REG_ID, rd_ret, rd_val, rd_val & CS43L22_CHIP_ID_MASK);
+
+      /* POWER_CTL1: expected 0x01 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_POWER_CTL1,
+                                                    &rd_val, 1);
+      log_i("[verify] POWER_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_POWER_CTL1, rd_ret, rd_val, 0x01);
+
+      /* CLOCKING_CTL: expected 0x81 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_CLOCKING_CTL,
+                                                    &rd_val, 1);
+      log_i("[verify] CLOCKING_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_CLOCKING_CTL, rd_ret, rd_val, 0x81);
+
+      /* INTERFACE_CTL1: expected 0x04 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_INTERFACE_CTL1,
+                                                    &rd_val, 1);
+      log_i("[verify] INTERFACE_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_INTERFACE_CTL1, rd_ret, rd_val, 0x04);
+
+      /* MISC_CTL: expected 0x04 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_MISC_CTL,
+                                                    &rd_val, 1);
+      log_i("[verify] MISC_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_MISC_CTL, rd_ret, rd_val, 0x04);
+
+      /* TONE_CTL: expected 0x0F */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_TONE_CTL,
+                                                    &rd_val, 1);
+      log_i("[verify] TONE_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_TONE_CTL, rd_ret, rd_val, 0x0F);
+
+      /* INTERFACE_CTL2: expected 0x00 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_INTERFACE_CTL2,
+                                                    &rd_val, 1);
+      log_i("[verify] INTERFACE_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_INTERFACE_CTL2, rd_ret, rd_val, 0x00);
+
+      /* PASSTHR_A_SELECT: expected 0x00 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_PASSTHR_A_SELECT,
+                                                    &rd_val, 1);
+      log_i("[verify] PASSTHR_A(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_PASSTHR_A_SELECT, rd_ret, rd_val, 0x00);
+
+      /* PLAYBACK_CTL1: expected 0x00 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_PLAYBACK_CTL1,
+                                                    &rd_val, 1);
+      log_i("[verify] PLAYBACK_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_PLAYBACK_CTL1, rd_ret, rd_val, 0x00);
+
+      /* PCMA_VOL: expected 0x00 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_PCMA_VOL,
+                                                    &rd_val, 1);
+      log_i("[verify] PCMA_VOL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_PCMA_VOL, rd_ret, rd_val, 0x00);
+
+      /* CHARGE_PUMP_FREQ: expected 0x05 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_CHARGE_PUMP_FREQ,
+                                                    &rd_val, 1);
+      log_i("[verify] CHG_PUMP(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_CHARGE_PUMP_FREQ, rd_ret, rd_val, 0x05);
+
+      /* POWER_CTL2: expected 0x05 */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_POWER_CTL2,
+                                                    &rd_val, 1);
+      log_i("[verify] POWER_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_POWER_CTL2, rd_ret, rd_val, 0xAA);
+
+      /* ---- I2S playback test ---- */
+      /* Step 1: Activate playback path */
+      cs43lxxx_status_t play_ret = cs43l22_drv.pf_play(&cs43l22_drv);
+      log_i("[i2s] play ret=%d", play_ret);
+
+      /* Verify play registers */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_POWER_CTL1,
+                                                    &rd_val, 1);
+      log_i("[i2s] POWER_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_POWER_CTL1, rd_ret, rd_val, 0x9E);
+
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_MISC_CTL,
+                                                    &rd_val, 1);
+      log_i("[i2s] MISC_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_MISC_CTL, rd_ret, rd_val, 0x06);
+
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_POWER_CTL2,
+                                                    &rd_val, 1);
+      log_i("[i2s] POWER_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
+            CS43L22_REG_POWER_CTL2, rd_ret, rd_val, 0xAA);
+
+
+
+      /* Step 3: Switch DMA to CIRCULAR mode so the tone plays continuously.
+       *         NORMAL mode stops after 96 samples (1 ms) — inaudible click. */
+      // hdma_spi3_tx.Init.Mode = DMA_CIRCULAR;
+      // HAL_DMA_Init(&hdma_spi3_tx);
+
+      /* Step 4: Start I2S circular DMA — plays forever until stopped */
+      cs43lxxx_status_t i2s_ret = g_cs43lxxx_hal_ops.pf_i2s_transmit_with_dma(
+                                      (uint16_t *)sine_1khz, 96);
+      dma_tx_done=0;                                      
+      log_i("[i2s] dma circular start ret=%d (size=96, ~%d Hz)",
+            i2s_ret, 96000 / 96);
+
+      /* Step 5: DEBUG — wait for a few DMA cycles then check clocks DURING playback */
+      g_cs43lxxx_hal_ops.pf_delay_ms(200);
+
+      /* CLK_STATUS during active DMA (circular → clocks are running) */
+      rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
+                                                    CS43L22_REG_OVF_CLK_STATUS,
+                                                    &rd_val, 1);
+      log_i("[i2s] CLK_STATUS(0x%02X) ret=%d val=0x%02X (bit6=PLL_LCK,bit4=SCLK,bit3=LRCK)",
+            CS43L22_REG_OVF_CLK_STATUS, rd_ret, rd_val);
+
+      /* STM32 I2S3 registers */
+      log_i("[i2s] I2S3 CR1=0x%08lX CR2=0x%08lX SR=0x%08lX",
+            hi2s3.Instance->I2SCFGR, hi2s3.Instance->I2SPR, hi2s3.Instance->SR);
+
+      /* RCC + GPIO diagnostics */
+      log_i("[dbg] APB1ENR=0x%08lX PLLI2SCFGR=0x%08lX",
+            RCC->APB1ENR, RCC->PLLI2SCFGR);
+      log_i("[dbg] GPIOA_MODER=0x%08lX GPIOC_MODER=0x%08lX",
+            GPIOA->MODER, GPIOC->MODER);
+      log_i("[dbg] GPIOA_AFRL=0x%08lX GPIOC_AFRL=0x%08lX GPIOC_AFRH=0x%08lX",
+            GPIOA->AFR[0], GPIOC->AFR[0], GPIOC->AFR[1]);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -145,9 +306,17 @@ int main(void)
     while(1)
     {
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
+//    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
+      if(dma_tx_done)
+      {
+
+          dma_tx_done = 0;
+          cs43lxxx_status_t i2s_ret = g_cs43lxxx_hal_ops.pf_i2s_transmit_with_dma(
+                                      (uint16_t *)sine_1khz, 96);
+          log_i("[i2s] DMA TX complete!");                                      
+      }
     }
 
   /* USER CODE END 3 */
@@ -232,6 +401,35 @@ static void elog_init_handler(void)
                 ~(ELOG_FMT_P_INFO | ELOG_FMT_T_INFO | ELOG_FMT_TIME));
     elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL);
     elog_start();
+}
+
+/* I2S DMA TX complete callback */
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+    if(hi2s == &hi2s3)
+    {
+        dma_tx_done = 1;
+        // log_i("[i2s] TxCpltCallback: DMA transfer complete!");
+    }
+}
+
+/* I2S DMA TX half-complete callback */
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+    if(hi2s == &hi2s3)
+    {
+        // log_i("[i2s] TxHalfCpltCallback: half done");
+    }
+}
+
+/* I2S error callback */
+void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
+{
+    if(hi2s == &hi2s3)
+    {
+        uint32_t err = HAL_I2S_GetError(hi2s);
+        log_i("[i2s] ErrorCallback: err=0x%08lX", err);
+    }
 }
 /* USER CODE END 4 */
 

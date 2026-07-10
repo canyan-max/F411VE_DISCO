@@ -57,6 +57,7 @@
 /* External variables --------------------------------------------------------*/
 extern HCD_HandleTypeDef hhcd_USB_OTG_FS;
 extern DMA_HandleTypeDef hdma_spi3_tx;
+extern I2S_HandleTypeDef hi2s3;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -228,5 +229,11 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+/**
+  * @brief This function handles SPI3 global interrupt (I2S3).
+  */
+// void SPI3_IRQHandler(void)
+// {
+//   HAL_I2S_IRQHandler(&hi2s3);
+// }
 /* USER CODE END 1 */

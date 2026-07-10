@@ -13,7 +13,6 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>       /* stdint lib header file. */
 #include "cs43lxxx_hal.h" /* cs43lxxx_hal lib header file. */
 #include "i2c.h"
 #include "i2s.h"
@@ -35,7 +34,7 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_transmit_dma(uint16_t *p_buffer,
                                                        uint16_t  size);
 static void              cs43lxxx_hal_delay_ms(uint32_t ms);
 
-static void cs43lxxx_hal_power_control(uint8_t state);
+static void        cs43lxxx_hal_power_control(uint8_t state);
 cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops =
     {.pf_i2c_read_reg          = cs43lxxx_hal_i2c_read_reg,
      .pf_i2c_write_reg         = cs43lxxx_hal_i2c_write_reg,

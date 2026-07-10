@@ -53,13 +53,13 @@ extern "C"
 /* typedef ------------------------------------------------------------------*/
 typedef enum CS43LXXX_STATUS_T
 {
-    // CS43LXXX I2C operations is OK. 
+    // CS43LXXX I2C operations is OK.
     CS43LXXX_STATUS_OK = 0x00U,
-   //  CS43LXXX I2C operations is ERROR. 
+   //  CS43LXXX I2C operations is ERROR.
     CS43LXXX_STATUS_ERROR,
     //CS43LXXX I2C operations is BUSY.
     CS43LXXX_STATUS_BUSY,
-   //  CS43LXXX I2C operations is TIMEOUT. 
+   //  CS43LXXX I2C operations is TIMEOUT.
     CS43LXXX_STATUS_TIMEOUT,
     // CS43LXXX_STATUS_ERR_SRC
     CS43LXXX_STATUS_ERR_SRC
@@ -74,18 +74,18 @@ typedef struct CS43LXXX_HAL_OPS_T
                                          uint16_t reg_addr,
                                          uint8_t *p_data,
                                          uint16_t len);
-    //I2C read operation function pointer. 
+    //I2C read operation function pointer.
     cs43lxxx_status_t (*pf_i2c_read_reg)(uint8_t  dev_addr,
                                         uint16_t reg_addr,
                                         uint8_t *p_data,
                                         uint16_t len);
-    // I2S tramsmit operation function pointer.                                 
+    // I2S tramsmit operation function pointer.
     cs43lxxx_status_t (*pf_i2s_transmit_with_dma)(uint16_t *p_buffer,
                                                  uint16_t  size);
     // power control operation function pointer.
     void (*pf_power_control)(uint8_t state);
     // system delay operation function pointer.
-    void (*pf_delay_ms)(uint32_t ms);                                                 
+    void (*pf_delay_ms)(uint32_t ms);
 } cs43lxxx_hal_ops_t;
 
 typedef struct CS43XXX_DRV_T
@@ -93,7 +93,22 @@ typedef struct CS43XXX_DRV_T
     /* ops table of CS43LXXX I2C operations tables*/
     /* hal operations table pointer. */
     cs43lxxx_hal_ops_t *p_hal_ops;
-    /* drv data*/
+    /* self operation table ----------------------------------------------------*/
+    // CS43LXXX init operation function pointer.
+    cs43lxxx_status_t (*pf_init)(struct CS43XXX_DRV_T *p_drv, uint8_t volume);
+    // CS43LXXX read id operation function pointer.
+    cs43lxxx_status_t (*pf_read_id)(struct CS43XXX_DRV_T *p_drv, uint8_t *p_id);
+    // CS43LXXX set volume operation function pointer.
+    cs43lxxx_status_t (*pf_set_volume)(struct CS43XXX_DRV_T *p_drv,
+                                       uint8_t              volume);
+    // CS43LXXX set mute operation function pointer.
+    cs43lxxx_status_t (*pf_set_mute)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX set out operation function pointer.
+    cs43lxxx_status_t (*pf_set_out)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX play operation function pointer.
+    cs43lxxx_status_t (*pf_play)(struct CS43XXX_DRV_T *p_drv);
+    /* drv data ----------------------------------------------------------------*/
+    uint8_t out_put;
     uint8_t is_init;
     uint8_t dev_i2c_adr;
 } cs43xxx_drv_t;
@@ -103,6 +118,10 @@ typedef struct CS43XXX_DRV_T
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
+cs43lxxx_status_t cs43lxxx_instruct(cs43xxx_drv_t      *p_drv,
+                                    cs43lxxx_hal_ops_t *p_hal_ops,
+                                    uint8_t             i2c_id,
+                                    uint8_t             out_put_dev);
 
 #ifdef __cplusplus
 }

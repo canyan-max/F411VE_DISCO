@@ -5,8 +5,8 @@
 #  无参数默认: 编译 + 烧录
 #  新电脑只需修改下面两行路径即可
 # ============================================
-
-UV="/d/software_config/keil_soft/keil_app/UV4/UV4.exe"
+UV="/d/Soft/KEIL5/UV4/UV4.exe" #home 
+# UV="/d/software_config/keil_soft/keil_app/UV4/UV4.exe" #company
 PROJ="MDK-ARM/F411VE_DISCO.uvprojx"
 
 BUILD_LOG="$PWD/build_log.txt"
