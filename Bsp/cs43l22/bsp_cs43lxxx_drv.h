@@ -82,6 +82,12 @@ typedef struct CS43LXXX_HAL_OPS_T
     // I2S tramsmit operation function pointer.
     cs43lxxx_status_t (*pf_i2s_transmit_with_dma)(uint16_t *p_buffer,
                                                  uint16_t  size);
+    // stop i2s tramsimit operation function pointer.                                                 
+    cs43lxxx_status_t (*pf_i2s_stop_dma)(void);            
+    // stop i2s tramsimit operation function pointer.                                                 
+    cs43lxxx_status_t (*pf_i2s_resume_dma)(void);        
+    // stop i2s tramsimit operation function pointer.                                                 
+    cs43lxxx_status_t (*pf_i2s_pause_dma)(void);                                        
     // power control operation function pointer.
     void (*pf_power_control)(uint8_t state);
     // system delay operation function pointer.
@@ -107,6 +113,12 @@ typedef struct CS43XXX_DRV_T
     cs43lxxx_status_t (*pf_set_out)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.
     cs43lxxx_status_t (*pf_play)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX play operation function pointer.
+    cs43lxxx_status_t (*pf_stop)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX play operation function pointer.
+    cs43lxxx_status_t (*pf_resume)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX play operation function pointer.
+    cs43lxxx_status_t (*pf_pause)(struct CS43XXX_DRV_T *p_drv);
     /* drv data ----------------------------------------------------------------*/
     uint8_t out_put;
     uint8_t is_init;

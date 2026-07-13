@@ -1,0 +1,151 @@
+/**
+ ******************************************************************************
+ * @file    : audio_out.c
+ * @brief   : Audio output handle layer.
+ *            All BSP-specific references are confined to this file.
+ *            To swap the codec BSP, only audio_out_init() needs updating.
+ * @version : V1.0  2026
+ ******************************************************************************
+ */
+
+/* Includes -----------------------------------------------------------------*/
+#include "audio_out.h"
+#include "cs43lxxx_hal.h"     /* g_cs43lxxx_hal_ops, g_cs43l22_drv          */
+#include "bsp_cs43lxxx_drv.h" /* cs43lxxx_instruct, CS43XXX_I2C_ADDR_7BIT   */
+
+#define AUDIO_DBG
+#ifdef AUDIO_DBG
+#define AOUT_TAG "aout"
+#include "elog.h"
+#endif // end of AUDIO_DBG
+
+/* Internal context — every function goes through s_ctx, so the BSP type
+ * and instance name appear only in audio_out_init().                        */
+typedef struct
+{
+    cs43xxx_drv_t     *p_drv;
+    audio_out_cb_cfg_t cb;
+} audio_out_ctx_t;
+
+static audio_out_ctx_t s_ctx = {NULL, {NULL, NULL}};
+
+/* exported functions -------------------------------------------------------*/
+
+audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
+{
+    if(p_cb == NULL)
+    {
+        return AUDIO_OUT_ERROR;
+    }
+        
+
+    /* Bind BSP instances — only place in this file that names them directly */
+    s_ctx.p_drv = &g_cs43l22_drv;
+    s_ctx.cb    = *p_cb;
+
+    cs43lxxx_status_t ret = cs43lxxx_instruct(s_ctx.p_drv,
+                                               &g_cs43lxxx_hal_ops,
+                                               CS43XXX_I2C_ADDR_7BIT,
+                                               OUTPUT_DEVICE_AUTO);
+    if(ret != CS43LXXX_STATUS_OK)
+    {
+#ifdef AUDIO_DBG
+        log_e(AOUT_TAG, "instruct failed ret=%d", ret);
+#endif // end of AUDIO_DBG
+
+        return AUDIO_OUT_ERROR;
+    }
+#ifdef AUDIO_DBG
+    log_i(AOUT_TAG, "init ok is_init=%d", s_ctx.p_drv->is_init);
+#endif // end of AUDIO_DBG
+
+    return AUDIO_OUT_OK;
+}
+
+audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
+{
+    if(p_buf == NULL || s_ctx.p_drv == NULL)
+        return AUDIO_OUT_ERROR;
+
+    cs43lxxx_status_t ret = s_ctx.p_drv->pf_play(s_ctx.p_drv);
+    if(ret != CS43LXXX_STATUS_OK)
+    {
+#ifdef AUDIO_DBG
+        log_e(AOUT_TAG, "pf_play failed ret=%d", ret);
+#endif // end of AUDIO_DBG
+        return AUDIO_OUT_ERROR;
+    }
+
+    ret = s_ctx.p_drv->p_hal_ops->pf_i2s_transmit_with_dma((uint16_t *)p_buf, len);
+    if(ret != CS43LXXX_STATUS_OK)
+    {
+#ifdef AUDIO_DBG
+        log_e(AOUT_TAG, "i2s transmit failed ret=%d", ret);
+#endif // end of AUDIO_DBG
+        return AUDIO_OUT_ERROR;
+    }
+
+    return AUDIO_OUT_OK;
+}
+
+void audio_out_stop(void)
+{
+    if(s_ctx.p_drv != NULL)
+    {
+        s_ctx.p_drv->pf_stop(s_ctx.p_drv);
+    }
+
+}
+
+
+void audio_out_pause(void)
+{
+    if(s_ctx.p_drv != NULL)
+    {
+        s_ctx.p_drv->pf_pause(s_ctx.p_drv);
+    }
+
+}
+
+void audio_out_resume(void)
+{
+    if(s_ctx.p_drv != NULL)
+    {
+        s_ctx.p_drv->pf_resume(s_ctx.p_drv);
+    }
+
+}
+
+
+audio_out_status_t audio_out_set_volume(uint8_t vol)
+{
+    if(s_ctx.p_drv == NULL)
+    {
+        return AUDIO_OUT_ERROR;
+    }
+
+    cs43lxxx_status_t ret = s_ctx.p_drv->pf_set_volume(s_ctx.p_drv, vol);
+    return (ret == CS43LXXX_STATUS_OK) ? AUDIO_OUT_OK : AUDIO_OUT_ERROR;
+}
+
+
+
+void audio_out_tx_half_cplt(void)
+{
+    if(s_ctx.cb.pf_half_cplt != NULL)
+    {
+        s_ctx.cb.pf_half_cplt();
+    }
+
+}
+
+void audio_out_tx_cplt(void)
+{
+    if(s_ctx.cb.pf_cplt != NULL)
+    {
+        s_ctx.cb.pf_cplt();
+    }
+
+}
+
+/* end of file --------------------------------------------------------------*/

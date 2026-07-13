@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../USB_HOST/App;../USB_HOST/Target;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Host_Library/Core/Inc;../Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/MP3;../Middlewares/EasyLog/Inc;../Middlewares/EasyLog/Src;../Bsp/cs43l22;../Platform/HAL_ST/cs43lxxx_hal</IncludePath>
+              <IncludePath>../Core/Inc;../USB_HOST/App;../USB_HOST/Target;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Host_Library/Core/Inc;../Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/MP3;../Middlewares/EasyLog/Inc;../Middlewares/EasyLog/Src;../Bsp/cs43l22;../Platform/HAL_ST/cs43lxxx_hal;..\Handle\audio;..\Tasks\player</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -806,6 +806,26 @@
               <FileName>elog_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\EasyLog\Src\elog_utils.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Tasks</GroupName>
+          <Files>
+            <File>
+              <FileName>mp3_player.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Tasks\player\mp3_player.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Handle</GroupName>
+          <Files>
+            <File>
+              <FileName>audio_out.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Handle\audio\audio_out.c</FilePath>
             </File>
           </Files>
         </Group>

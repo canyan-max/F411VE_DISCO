@@ -22,6 +22,8 @@
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
+cs43xxx_drv_t g_cs43l22_drv = {0};
+
 static cs43lxxx_status_t cs43lxxx_hal_i2c_write_reg(uint8_t  dev_addr,
                                                     uint16_t reg_addr,
                                                     uint8_t *p_data,
@@ -32,17 +34,24 @@ static cs43lxxx_status_t cs43lxxx_hal_i2c_read_reg(uint8_t  dev_addr,
                                                    uint16_t len);
 static cs43lxxx_status_t cs43lxxx_hal_i2s_transmit_dma(uint16_t *p_buffer,
                                                        uint16_t  size);
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_stop(void);
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_resume(void);
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_pause(void);
 static void              cs43lxxx_hal_delay_ms(uint32_t ms);
+static void              cs43lxxx_hal_power_control(uint8_t state);
 
-static void        cs43lxxx_hal_power_control(uint8_t state);
 cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops =
     {.pf_i2c_read_reg          = cs43lxxx_hal_i2c_read_reg,
      .pf_i2c_write_reg         = cs43lxxx_hal_i2c_write_reg,
      .pf_i2s_transmit_with_dma = cs43lxxx_hal_i2s_transmit_dma,
+     .pf_i2s_stop_dma          = cs43lxxx_hal_i2s_dma_stop,
+     .pf_i2s_resume_dma        = cs43lxxx_hal_i2s_dma_resume,
+     .pf_i2s_pause_dma         = cs43lxxx_hal_i2s_dma_pause,
      .pf_delay_ms              = cs43lxxx_hal_delay_ms,
      .pf_power_control         = cs43lxxx_hal_power_control};
 
 /* private  functions  ------------------------------------------------------*/
+
 /**
  * @brief            :  [cs43lxxx_hal_i2c_write_reg]
  * @retval           :  [
@@ -116,6 +125,59 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_transmit_dma(uint16_t *p_buffer,
     }
     return CS43LXXX_STATUS_OK;
 }
+
+/**
+ * @brief            :  [cs43lxxx_hal_i2s_dma_resume]
+ * @retval           :  [CS43LXXX_STATUS_OK = 0x00U,
+                         CS43LXXX_STATUS_ERROR,
+                         CS43LXXX_STATUS_BUSY,
+                         CS43LXXX_STATUS_TIMEOUT
+                        ]
+ */
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_resume(void)
+{
+    HAL_StatusTypeDef ret = HAL_I2S_DMAResume(&hi2s3);
+    if(HAL_OK != ret)
+    {
+        return CS43LXXX_STATUS_ERROR;
+    }
+    return CS43LXXX_STATUS_OK;
+}
+/**
+ * @brief            :  [cs43lxxx_hal_i2s_dma_pause]
+ * @retval           :  [CS43LXXX_STATUS_OK = 0x00U,
+                         CS43LXXX_STATUS_ERROR,
+                         CS43LXXX_STATUS_BUSY,
+                         CS43LXXX_STATUS_TIMEOUT
+                        ]
+ */
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_pause(void)
+{
+    HAL_StatusTypeDef ret = HAL_I2S_DMAPause(&hi2s3);
+    if(HAL_OK != ret)
+    {
+        return CS43LXXX_STATUS_ERROR;
+    }
+    return CS43LXXX_STATUS_OK;
+}
+/**
+ * @brief            :  [cs43lxxx_hal_i2s_dma_stop]
+ * @retval           :  [CS43LXXX_STATUS_OK = 0x00U,
+                         CS43LXXX_STATUS_ERROR,
+                         CS43LXXX_STATUS_BUSY,
+                         CS43LXXX_STATUS_TIMEOUT
+                        ]
+ */
+static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_stop(void)
+{
+    HAL_StatusTypeDef ret = HAL_I2S_DMAStop(&hi2s3);
+    if(HAL_OK != ret)
+    {
+        return CS43LXXX_STATUS_ERROR;
+    }
+    return CS43LXXX_STATUS_OK;
+}
+
 /**
  * @brief            :  [cs43lxxx_hal_power_control]
  * @param[in]        :  [uint8_t state 1 : power on, 0 : power off]

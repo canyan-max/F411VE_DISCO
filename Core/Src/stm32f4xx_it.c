@@ -57,7 +57,6 @@
 /* External variables --------------------------------------------------------*/
 extern HCD_HandleTypeDef hhcd_USB_OTG_FS;
 extern DMA_HandleTypeDef hdma_spi3_tx;
-extern I2S_HandleTypeDef hi2s3;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */

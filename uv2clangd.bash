@@ -6,11 +6,11 @@ cd "$(dirname "$0")"
 # ============================================
 
 #home 
-ARMCLANG_BIN="D:/soft/keil5/ARM/ARMCLANG/bin/armclang.exe"
-ARMCLANG_INC="D:/soft/keil5/ARM/ARMCLANG/include"
+#ARMCLANG_BIN="D:/soft/keil5/ARM/ARMCLANG/bin/armclang.exe"
+#ARMCLANG_INC="D:/soft/keil5/ARM/ARMCLANG/include"
 # company
-# ARMCLANG_BIN="D:/software_config/keil_soft/keil_app/ARM/ARMCLANG/bin/armclang.exe"
-# ARMCLANG_INC="D:/software_config/keil_soft/keil_app/ARM/ARMCLANG/include"
+ARMCLANG_BIN="D:/software_config/keil_soft/keil_app/ARM/ARMCLANG/bin/armclang.exe"
+ARMCLANG_INC="D:/software_config/keil_soft/keil_app/ARM/ARMCLANG/include"
 TARGET="arm-none-eabi"
 
 # ============================================

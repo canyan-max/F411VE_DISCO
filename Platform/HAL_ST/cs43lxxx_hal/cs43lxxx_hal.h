@@ -20,6 +20,7 @@ extern "C" {
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>                               /* stdint lib header file. */
 #include <stddef.h>                               /* stdint lib header file. */
+#include "bsp_cs43lxxx_drv.h"
 
 /* define -------------------------------------------------------------------*/
 
@@ -28,6 +29,8 @@ extern "C" {
 /* exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
+extern cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops;
+extern cs43xxx_drv_t      g_cs43l22_drv;
 
 /* functions ----------------------------------------------------------------*/
 
