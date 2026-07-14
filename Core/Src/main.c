@@ -6748,25 +6748,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
         mp3_player_process();
-
-        /* Resume test: pause at 1 s, resume at 2.5 s (single-shot) */
-        {
-            static uint8_t s_test_state = 0; /* 0=play 1=paused 2=resumed */
-            uint32_t       now          = HAL_GetTick();
-            if(s_test_state == 0 && now >= 1000U)
-            {
-                mp3_player_pause();
-                s_test_state = 1;
-            }
-            else if(s_test_state == 1 && now >= 1500U)
-            {
-
-                mp3_player_resume();
-
-                s_test_state = 2;
-//                log_i("mp3_player_resume");
-            }
-        }
     }
 
   /* USER CODE END 3 */

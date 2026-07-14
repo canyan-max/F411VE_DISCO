@@ -46,7 +46,7 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
     cs43lxxx_status_t ret = cs43lxxx_instruct(s_ctx.p_drv,
                                                &g_cs43lxxx_hal_ops,
                                                CS43XXX_I2C_ADDR_7BIT,
-                                               OUTPUT_DEVICE_AUTO);
+                                               OUTPUT_DEVICE_HEADPHONE);
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG

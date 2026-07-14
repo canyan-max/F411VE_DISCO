@@ -164,17 +164,6 @@ static cs43lxxx_status_t cs43lxxx_set_mute(cs43xxx_drv_t *p_drv)
     {
         return ret;
     }
-
-    /* Power down the codec while MCLK is still present so the CS43L22 can
-     * complete an orderly shut-down.  Without this the DAC stays active and
-     * produces noise when MCLK disappears (I2S DMA stop). */
-    // temp_reg = 0x9FU; /* POWER_CTL1: same as play(0x9E) but PDN bit[0]=1 */
-    // ret      = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL1, &temp_reg,
-    // 1); if(CS43LXXX_STATUS_OK != ret)
-    // {
-    //     return ret;
-    // }
-
     return CS43LXXX_STATUS_OK;
 }
 
@@ -365,7 +354,8 @@ static cs43lxxx_status_t cs43lxxx_resume(cs43xxx_drv_t *p_drv)
         return CS43LXXX_STATUS_ERR_SRC;
     }
     cs43lxxx_status_t ret = CS43LXXX_STATUS_OK;
-
+    uint8_t temp_reg = 0x9EU;
+    volatile uint32_t index = 0x00;
     /* Unmute (restore POWER_CTL2 + HP volume), then restart DMA.
      * POWER_CTL1 is not changed — codec stayed at 0x9E through pause. */
     ret = cs43lxxx_set_out(p_drv);
@@ -373,7 +363,13 @@ static cs43lxxx_status_t cs43lxxx_resume(cs43xxx_drv_t *p_drv)
     {
         return ret;
     }
+    for(index = 0x00; index < 0xFF; index++);
     
+//    ret      = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL1, &temp_reg, 1);
+//    if(CS43LXXX_STATUS_OK != ret)
+//    {
+//        return ret;
+//    }
     ret = p_drv->p_hal_ops->pf_i2s_resume_dma();
     if(CS43LXXX_STATUS_OK != ret)
     {
@@ -404,7 +400,13 @@ static cs43lxxx_status_t cs43lxxx_pause(cs43xxx_drv_t *p_drv)
         return CS43LXXX_STATUS_ERR_SRC;
     }
     cs43lxxx_status_t ret = CS43LXXX_STATUS_OK;
-
+    uint8_t temp_reg = 0x01U;
+    
+    ret = p_drv->p_hal_ops->pf_i2s_pause_dma();
+    if(CS43LXXX_STATUS_OK != ret)
+    {
+        return ret;
+    }
     /* Mute outputs, then pause DMA. POWER_CTL1 is intentionally not changed —
      * codec remains at 0x9E so it can resume cleanly without re-init. */
     ret = cs43lxxx_set_mute(p_drv);
@@ -412,8 +414,8 @@ static cs43lxxx_status_t cs43lxxx_pause(cs43xxx_drv_t *p_drv)
     {
         return ret;
     }
-
-    ret = p_drv->p_hal_ops->pf_i2s_pause_dma();
+    
+    ret      = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL1, &temp_reg, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
         return ret;
@@ -443,7 +445,7 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
     {
         return CS43LXXX_STATUS_ERR_SRC;
     }
-    // step 0
+    // step 0 power reset 
     p_drv->p_hal_ops->pf_power_control(0);
     p_drv->p_hal_ops->pf_delay_ms(5);
     p_drv->p_hal_ops->pf_power_control(1);
@@ -468,6 +470,8 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
             reg_value = 0xAA; /* SPK always ON, HP always ON */
             break;
         case OUTPUT_DEVICE_AUTO:
+            reg_value = 0x05; /* Auto-detect HP or SPK */
+            break;
         default:
             reg_value = 0x05; /* Auto-detect HP or SPK */
             break;
