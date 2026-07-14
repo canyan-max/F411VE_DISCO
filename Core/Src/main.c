@@ -40,8 +40,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 /*----The Length of This Array is 52079 Byte.----*/
-const uint8_t Array[]={
+const unsigned char Array[]={
 
 0x49,0x44,0x33,0x04,0x00,0x00,0x00,0x00,0x00,0x23,0x54,0x53,0x53,0x45,0x00,0x00,
 
@@ -6729,13 +6730,14 @@ int main(void)
         log_i("[verify] POWER_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
               CS43L22_REG_POWER_CTL2, rd_ret, rd_val, 0x05);
 
-        static const mp3_src_t s_flash_src = {
-            .pf_read    = flash_src_read,
-            .p_ctx      = (void *)Array,
-            .total_size = sizeof(Array),
-        };
-        mp3_player_start(&s_flash_src);
     }
+
+    static const mp3_src_t s_flash_src = {
+        .pf_read    = flash_src_read,
+        .p_ctx      = (void *)Array,
+        .total_size = sizeof(Array),
+    };
+    mp3_player_start(&s_flash_src);
 
   /* USER CODE END 2 */
 
@@ -6744,10 +6746,30 @@ int main(void)
     while(1)
     {
     /* USER CODE END WHILE */
-//    MX_USB_HOST_Process();
+    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
         mp3_player_process();
+
+        /* soft_stop 测试：播完后等 5s 重播（可循环） */
+        {
+            static uint8_t   s_test_state = 0; /* 0=播放中 1=已停止等待 */
+            static uint32_t  s_stop_tick  = 0;
+
+            if(s_test_state == 0 && !mp3_player_is_playing())
+            {
+                s_stop_tick  = HAL_GetTick();
+                s_test_state = 1;
+//                log_i(MAIN_TAG, "EOS: soft_stop, wait 5s");
+            }
+            else if(s_test_state == 1
+                    && (HAL_GetTick() - s_stop_tick) >= 5000U)
+            {
+//                log_i(MAIN_TAG, "replay");
+                mp3_player_start(&s_flash_src);
+                s_test_state = 0;
+            }
+        }
     }
 
   /* USER CODE END 3 */
@@ -6809,9 +6831,9 @@ void PeriphCommonClock_Config(void)
   /** Initializes the peripherals clock
   */
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S;
-  PeriphClkInitStruct.PLLI2S.PLLI2SN = 200;
+  PeriphClkInitStruct.PLLI2S.PLLI2SN = 254;
   PeriphClkInitStruct.PLLI2S.PLLI2SM = 5;
-  PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+  PeriphClkInitStruct.PLLI2S.PLLI2SR = 3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();

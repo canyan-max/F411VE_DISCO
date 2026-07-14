@@ -35,8 +35,10 @@ static const mp3_src_t    *sp_src;
 static uint32_t            s_offset;
 static int16_t             s_dma_buf[PCM_BUF_LEN];
 static uint8_t             s_in_buf[MP3_IN_BUF_SIZE];
-static volatile fill_req_t s_fill_req = FILL_NONE;
-static volatile uint8_t    s_running  = 0;
+static volatile fill_req_t s_fill_req    = FILL_NONE;
+static volatile uint8_t    s_running     = 0;
+static volatile uint8_t    s_dma_running = 0; /* DMA 物理上是否在运行 */
+static volatile uint8_t    s_codec_awake = 0; /* codec 是否处于唤醒状态（非 PDN）*/
 
 /* Forward declarations — needed for s_out_cb initializer below */
 static void mp3_isr_player_tx_half_cplt(void);
@@ -100,35 +102,70 @@ static void decode_frame(int16_t *p_out)
 void mp3_player_start(const mp3_src_t *p_src)
 {
     mp3dec_init(&s_dec);
-    sp_src     = p_src;
-    s_offset   = 0;
+    sp_src      = p_src;
+    s_offset    = 0;
+    s_running   = 1;
+    s_codec_awake = 1;
+    __disable_irq();
     s_fill_req = FILL_NONE;
-    s_running  = 1;
+    __enable_irq();
 
-    decode_frame(&s_dma_buf[0]);
-    decode_frame(&s_dma_buf[PCM_HALF_LEN]);
-
-    audio_out_start(s_dma_buf, PCM_BUF_LEN);
+    if(!s_dma_running)
+    {
+        /* 首次启动：预填两帧，然后启动 DMA + 唤醒 codec */
+        decode_frame(&s_dma_buf[0]);
+        decode_frame(&s_dma_buf[PCM_HALF_LEN]);
+        s_dma_running = 1;
+        audio_out_start(s_dma_buf, PCM_BUF_LEN);
+    }
+    else
+    {
+        /* DMA 已在运行（soft_stop 后保持运行），只需唤醒 codec */
+        audio_out_play();
+    }
 #ifdef MP3_PLARER_DBG
-    log_i("start: sr=%d ch=%d", s_frame_info.hz, s_frame_info.channels);
+    log_i("start: sr=%d ch=%d rate=%d fram byte=%d dma_was_running=%d",
+          s_frame_info.hz, s_frame_info.channels, s_frame_info.bitrate_kbps,
+          s_frame_info.frame_bytes,s_dma_running);
 #endif // end of MP3_PLARER_DBG
-
 }
 
 void mp3_player_stop(void)
 {
-    s_running = 0;
+    s_running     = 0;
+    s_codec_awake = 0;
+    s_dma_running = 0;
     audio_out_stop();
 #ifdef MP3_PLARER_DBG
     log_i("stopped at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
+}
 
+void mp3_player_soft_stop(void)
+{
+    if(!s_codec_awake)
+        return; /* codec 已在 PDN，防止重复 I2C 写入 */
+    s_codec_awake = 0;
+    s_running     = 0;
+    __disable_irq();
+    s_fill_req = FILL_NONE;
+    __enable_irq();
+    audio_out_soft_stop(); /* 仅写 PDN，DMA 保持运行 */
+#ifdef MP3_PLARER_DBG
+    log_i("soft_stop at offset=%lu", s_offset);
+#endif // end of MP3_PLARER_DBG
+}
+
+uint8_t mp3_player_is_playing(void)
+{
+    return s_running;
 }
 
 void mp3_player_pause(void)
 {
     s_running = 0;
-    audio_out_pause();
+    /* DMA 继续运行，decode_frame() 在 s_running=0 时填零，
+     * codec 收到全零 PCM → DAC 静音 → 不碰硬件 MUTE/POWER 寄存器，无白噪声 */
 #ifdef MP3_PLARER_DBG
     log_i("pause at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
@@ -138,7 +175,7 @@ void mp3_player_pause(void)
 void mp3_player_resume(void)
 {
     s_running = 1;
-    audio_out_resume();
+    /* DMA 本来就在跑，下一次 ISR 触发后 decode_frame() 恢复解码真实音频 */
 #ifdef MP3_PLARER_DBG
     log_i("resume at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
@@ -176,7 +213,7 @@ void mp3_player_process(void)
                                ? &s_dma_buf[PCM_HALF_LEN]
                                : &s_dma_buf[0];
         memset(p_other, 0, PCM_HALF_LEN * sizeof(int16_t));
-        mp3_player_pause();
+        mp3_player_soft_stop();
     }
 }
 

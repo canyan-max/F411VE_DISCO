@@ -46,7 +46,7 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
     cs43lxxx_status_t ret = cs43lxxx_instruct(s_ctx.p_drv,
                                                &g_cs43lxxx_hal_ops,
                                                CS43XXX_I2C_ADDR_7BIT,
-                                               OUTPUT_DEVICE_HEADPHONE);
+                                               OUTPUT_DEVICE_AUTO);
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG
@@ -94,7 +94,22 @@ void audio_out_stop(void)
     {
         s_ctx.p_drv->pf_stop(s_ctx.p_drv);
     }
+}
 
+void audio_out_soft_stop(void)
+{
+    if(s_ctx.p_drv != NULL)
+    {
+        s_ctx.p_drv->pf_soft_stop(s_ctx.p_drv);
+    }
+}
+
+void audio_out_play(void)
+{
+    if(s_ctx.p_drv != NULL)
+    {
+        s_ctx.p_drv->pf_play(s_ctx.p_drv);
+    }
 }
 
 
@@ -103,6 +118,7 @@ void audio_out_pause(void)
     if(s_ctx.p_drv != NULL)
     {
         s_ctx.p_drv->pf_pause(s_ctx.p_drv);
+        // s_ctx.p_drv->p_hal_ops->pf_i2s_pause_dma();
     }
 
 }
@@ -112,6 +128,7 @@ void audio_out_resume(void)
     if(s_ctx.p_drv != NULL)
     {
         s_ctx.p_drv->pf_resume(s_ctx.p_drv);
+        // s_ctx.p_drv->p_hal_ops->pf_i2s_resume_dma();
     }
 
 }

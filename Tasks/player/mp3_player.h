@@ -24,8 +24,10 @@ void mp3_player_init(void);
 
 void mp3_player_start(const mp3_src_t *p_src);
 void mp3_player_stop(void);
+void mp3_player_soft_stop(void);
 void mp3_player_pause(void);
 void mp3_player_resume(void);
 void mp3_player_process(void);
+uint8_t mp3_player_is_playing(void);
 
 #endif /* MP3_PLAYER_H */

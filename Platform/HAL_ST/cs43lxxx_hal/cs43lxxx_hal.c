@@ -136,11 +136,10 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_transmit_dma(uint16_t *p_buffer,
  */
 static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_resume(void)
 {
-    HAL_StatusTypeDef ret = HAL_I2S_DMAResume(&hi2s3);
-    if(HAL_OK != ret)
-    {
-        return CS43LXXX_STATUS_ERROR;
-    }
+    /* HAL_I2S_DMAResume() 内部会多余地使能 TXE 中断，在 DMA 模式下
+     * 会触发中断处理函数与 DMA 冲突并破坏 hi2s3.State，导致下次
+     * Resume 失败。直接操作 TXDMAEN 位可靠且无副作用。 */
+    SET_BIT(SPI3->CR2, SPI_CR2_TXDMAEN);
     return CS43LXXX_STATUS_OK;
 }
 /**
@@ -153,11 +152,9 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_resume(void)
  */
 static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_pause(void)
 {
-    HAL_StatusTypeDef ret = HAL_I2S_DMAPause(&hi2s3);
-    if(HAL_OK != ret)
-    {
-        return CS43LXXX_STATUS_ERROR;
-    }
+    /* 直接清 TXDMAEN 位——DMA 流本身保持使能（循环模式），
+     * MCLK/BCLK/LRCK 继续，仅停止 I2S 向 DMA 发出请求。 */
+    CLEAR_BIT(SPI3->CR2, SPI_CR2_TXDMAEN);
     return CS43LXXX_STATUS_OK;
 }
 /**

@@ -113,8 +113,10 @@ typedef struct CS43XXX_DRV_T
     cs43lxxx_status_t (*pf_set_out)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.
     cs43lxxx_status_t (*pf_play)(struct CS43XXX_DRV_T *p_drv);
-    // CS43LXXX play operation function pointer.
+    // CS43LXXX hard stop: PDN + DMA stop + RESET low (用于完全下电).
     cs43lxxx_status_t (*pf_stop)(struct CS43XXX_DRV_T *p_drv);
+    // CS43LXXX soft stop: PDN + DMA stop, RESET 保持高 (寄存器保留, 下次 play() 直接唤醒).
+    cs43lxxx_status_t (*pf_soft_stop)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.
     cs43lxxx_status_t (*pf_resume)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.

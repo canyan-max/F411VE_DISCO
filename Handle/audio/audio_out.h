@@ -44,7 +44,9 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb);
  * Internally calls pf_play then starts I2S DMA. */
 audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len);
 
-void               audio_out_stop(void);
+void               audio_out_stop(void);      /* 硬下电：PDN + DMA Stop + RESET low */
+void               audio_out_soft_stop(void); /* 软下电：仅 PDN，DMA 保持运行 */
+void               audio_out_play(void);      /* 唤醒 codec（DMA 已在运行时使用）*/
 void               audio_out_pause(void);
 void               audio_out_resume(void);
 audio_out_status_t audio_out_set_volume(uint8_t vol);
