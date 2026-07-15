@@ -50,6 +50,7 @@ void               audio_out_play(void);      /* 唤醒 codec（DMA 已在运行
 void               audio_out_pause(void);
 void               audio_out_resume(void);
 audio_out_status_t audio_out_set_volume(uint8_t vol);
+audio_out_status_t audio_out_set_sample_rate(uint32_t hz);
 
 /* Call from HAL_I2S_TxHalfCpltCallback / HAL_I2S_TxCpltCallback */
 void audio_out_tx_half_cplt(void);

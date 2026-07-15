@@ -134,6 +134,14 @@ void audio_out_resume(void)
 }
 
 
+audio_out_status_t audio_out_set_sample_rate(uint32_t hz)
+{
+    if(s_ctx.p_drv == NULL || s_ctx.p_drv->p_hal_ops == NULL)
+        return AUDIO_OUT_ERROR;
+    cs43lxxx_status_t ret = s_ctx.p_drv->p_hal_ops->pf_i2s_set_audio_freq(hz);
+    return (ret == CS43LXXX_STATUS_OK) ? AUDIO_OUT_OK : AUDIO_OUT_ERROR;
+}
+
 audio_out_status_t audio_out_set_volume(uint8_t vol)
 {
     if(s_ctx.p_drv == NULL)

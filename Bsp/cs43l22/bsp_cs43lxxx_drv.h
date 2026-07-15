@@ -86,8 +86,10 @@ typedef struct CS43LXXX_HAL_OPS_T
     cs43lxxx_status_t (*pf_i2s_stop_dma)(void);            
     // stop i2s tramsimit operation function pointer.                                                 
     cs43lxxx_status_t (*pf_i2s_resume_dma)(void);        
-    // stop i2s tramsimit operation function pointer.                                                 
-    cs43lxxx_status_t (*pf_i2s_pause_dma)(void);                                        
+    // stop i2s tramsimit operation function pointer.
+    cs43lxxx_status_t (*pf_i2s_pause_dma)(void);
+    // reconfigure I2S sample rate (call only when DMA is not running).
+    cs43lxxx_status_t (*pf_i2s_set_audio_freq)(uint32_t freq_hz);
     // power control operation function pointer.
     void (*pf_power_control)(uint8_t state);
     // system delay operation function pointer.
@@ -113,9 +115,9 @@ typedef struct CS43XXX_DRV_T
     cs43lxxx_status_t (*pf_set_out)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.
     cs43lxxx_status_t (*pf_play)(struct CS43XXX_DRV_T *p_drv);
-    // CS43LXXX hard stop: PDN + DMA stop + RESET low (用于完全下电).
+    // CS43LXXX hard stop: PDN + DMA stop + RESET low (device power down).
     cs43lxxx_status_t (*pf_stop)(struct CS43XXX_DRV_T *p_drv);
-    // CS43LXXX soft stop: PDN + DMA stop, RESET 保持高 (寄存器保留, 下次 play() 直接唤醒).
+    // CS43LXXX soft stop: PDN + DMA stop, RESET().
     cs43lxxx_status_t (*pf_soft_stop)(struct CS43XXX_DRV_T *p_drv);
     // CS43LXXX play operation function pointer.
     cs43lxxx_status_t (*pf_resume)(struct CS43XXX_DRV_T *p_drv);

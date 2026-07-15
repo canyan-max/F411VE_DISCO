@@ -37,6 +37,7 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_transmit_dma(uint16_t *p_buffer,
 static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_stop(void);
 static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_resume(void);
 static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_pause(void);
+static cs43lxxx_status_t cs43lxxx_hal_i2s_set_audio_freq(uint32_t freq_hz);
 static void              cs43lxxx_hal_delay_ms(uint32_t ms);
 static void              cs43lxxx_hal_power_control(uint8_t state);
 
@@ -47,6 +48,7 @@ cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops =
      .pf_i2s_stop_dma          = cs43lxxx_hal_i2s_dma_stop,
      .pf_i2s_resume_dma        = cs43lxxx_hal_i2s_dma_resume,
      .pf_i2s_pause_dma         = cs43lxxx_hal_i2s_dma_pause,
+     .pf_i2s_set_audio_freq    = cs43lxxx_hal_i2s_set_audio_freq,
      .pf_delay_ms              = cs43lxxx_hal_delay_ms,
      .pf_power_control         = cs43lxxx_hal_power_control};
 
@@ -198,6 +200,22 @@ static void cs43lxxx_hal_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);
 }
+/**
+ * @brief            :  [cs43lxxx_hal_i2s_set_audio_freq]
+ * @param[in]        :  [uint32_t freq_hz]
+ */
+static cs43lxxx_status_t cs43lxxx_hal_i2s_set_audio_freq(uint32_t freq_hz)
+{
+    hi2s3.Init.AudioFreq = freq_hz;
+    if(HAL_OK != HAL_I2S_Init(&hi2s3))
+    {
+        return CS43LXXX_STATUS_ERROR;
+    }
+    return CS43LXXX_STATUS_OK;
+}
+
 /* exported functions -------------------------------------------------------*/
+
+
 
 /* end of  file -------------------------------------------------------------*/

@@ -1,5 +1,5 @@
 #define MP3P_TAG "mp3p"
-//#define MINIMP3_FLOAT_OUTPUT
+// #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_ONLY_MP3     1
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3.h"
@@ -38,7 +38,7 @@ static uint8_t             s_in_buf[MP3_IN_BUF_SIZE];
 static volatile fill_req_t s_fill_req    = FILL_NONE;
 static volatile uint8_t    s_running     = 0;
 static volatile uint8_t    s_dma_running = 0; /* DMA 物理上是否在运行 */
-static volatile uint8_t    s_codec_awake = 0; /* codec 是否处于唤醒状态（非 PDN）*/
+static volatile uint8_t s_codec_awake = 0; /* codec 是否处于唤醒状态（非 PDN）*/
 
 /* Forward declarations — needed for s_out_cb initializer below */
 static void mp3_isr_player_tx_half_cplt(void);
@@ -54,57 +54,85 @@ void mp3_player_init(void)
     audio_out_init(&s_out_cb);
 }
 
-/* Decode one MP3 frame into p_out (stereo interleaved, PCM_HALF_LEN int16).
- * Reads from sp_src via pf_read; handles mono→stereo expansion in-place.
- * Zeroes p_out on error or end-of-stream (produces silence instead of noise). */
-static void decode_frame(int16_t *p_out)
+/* Decode MP3 frames into p_out until PCM_HALF_LEN int16 are filled.
+ * Loops across frames so MPEG2 (576 samples/frame) and MPEG1 (1152
+ * samples/frame) both fill the buffer completely.  Expands mono to interleaved
+ * stereo in-place. */
+static void decode_half(int16_t *p_out)
 {
     memset(p_out, 0, PCM_HALF_LEN * sizeof(int16_t));
     if(!s_running)
         return;
 
-    if(s_offset >= sp_src->total_size)
+    uint32_t written = 0; /* int16 slots filled in p_out */
+
+    while(written < PCM_HALF_LEN && s_running)
     {
-        s_running = 0; /* EOS — silence this half; process() will stop DMA */
-        return;
-    }
-
-    uint32_t remaining = sp_src->total_size - s_offset;
-    uint32_t to_read   = (remaining < MP3_IN_BUF_SIZE) ? remaining
-                                                        : MP3_IN_BUF_SIZE;
-    uint32_t avail     = sp_src->pf_read(sp_src->p_ctx, s_offset,
-                                          s_in_buf, to_read);
-    if(avail == 0)
-        return;
-
-    int samples = mp3dec_decode_frame(&s_dec, s_in_buf, (int)avail,
-                                      p_out, &s_frame_info);
-
-    if(s_frame_info.frame_bytes > 0)
-        s_offset += (uint32_t)s_frame_info.frame_bytes;
-    else
-        s_offset++; /* skip 1 byte on sync error to avoid infinite loop */
-
-    if(samples <= 0)
-        return;
-
-    if(s_frame_info.channels == 1)
-    {
-        /* expand mono to stereo in-place (right-to-left traversal is safe) */
-        for(int i = samples - 1; i >= 0; i--)
+        if(s_offset >= sp_src->total_size)
         {
-            p_out[i * 2 + 1] = p_out[i];
-            p_out[i * 2]     = p_out[i];
+            s_running = 0; /* EOS */
+            return;
         }
+
+        uint32_t remaining = sp_src->total_size - s_offset;
+        uint32_t to_read   = (remaining < MP3_IN_BUF_SIZE) ? remaining
+                                                           : MP3_IN_BUF_SIZE;
+        uint32_t avail     = sp_src->pf_read(sp_src->p_ctx, s_offset, s_in_buf,
+                                             to_read);
+        if(avail == 0)
+        {
+            return;
+        }
+
+        int samples = mp3dec_decode_frame(&s_dec, s_in_buf, (int)avail,
+                                          p_out + written, &s_frame_info);
+
+        if(s_frame_info.frame_bytes > 0)
+        {
+            s_offset += (uint32_t)s_frame_info.frame_bytes;
+        }
+        else
+        {
+            s_offset++;
+            continue;
+        }
+
+        if(samples <= 0)
+        {
+            continue;
+        }
+
+        /* int16 count written by the decoder */
+        uint32_t int16_out = (uint32_t)samples *
+                             (uint32_t)s_frame_info.channels;
+
+        if(s_frame_info.channels == 1)
+        {
+            /* mono→stereo in-place (right-to-left traversal is safe) */
+            int16_t *pf = p_out + written;
+            for(int i = samples - 1; i >= 0; i--)
+            {
+                pf[i * 2 + 1] = pf[i];
+                pf[i * 2]     = pf[i];
+            }
+            int16_out = (uint32_t)samples * 2U;
+        }
+
+        /* safety: don't exceed buffer */
+        if(written + int16_out > PCM_HALF_LEN)
+        {
+            int16_out = PCM_HALF_LEN - written;
+        }
+        written += int16_out;
     }
 }
 
 void mp3_player_start(const mp3_src_t *p_src)
 {
     mp3dec_init(&s_dec);
-    sp_src      = p_src;
-    s_offset    = 0;
-    s_running   = 1;
+    sp_src        = p_src;
+    s_offset      = 0;
+    s_running     = 1;
     s_codec_awake = 1;
     __disable_irq();
     s_fill_req = FILL_NONE;
@@ -112,9 +140,10 @@ void mp3_player_start(const mp3_src_t *p_src)
 
     if(!s_dma_running)
     {
-        /* 首次启动：预填两帧，然后启动 DMA + 唤醒 codec */
-        decode_frame(&s_dma_buf[0]);
-        decode_frame(&s_dma_buf[PCM_HALF_LEN]);
+        /* 首次启动：预填两半，设置采样率，然后启动 DMA + 唤醒 codec */
+        decode_half(&s_dma_buf[0]);
+        audio_out_set_sample_rate((uint32_t)s_frame_info.hz);
+        decode_half(&s_dma_buf[PCM_HALF_LEN]);
         s_dma_running = 1;
         audio_out_start(s_dma_buf, PCM_BUF_LEN);
     }
@@ -126,7 +155,7 @@ void mp3_player_start(const mp3_src_t *p_src)
 #ifdef MP3_PLARER_DBG
     log_i("start: sr=%d ch=%d rate=%d fram byte=%d dma_was_running=%d",
           s_frame_info.hz, s_frame_info.channels, s_frame_info.bitrate_kbps,
-          s_frame_info.frame_bytes,s_dma_running);
+          s_frame_info.frame_bytes, s_dma_running);
 #endif // end of MP3_PLARER_DBG
 }
 
@@ -164,12 +193,11 @@ uint8_t mp3_player_is_playing(void)
 void mp3_player_pause(void)
 {
     s_running = 0;
-    /* DMA 继续运行，decode_frame() 在 s_running=0 时填零，
+    /* DMA 继续运行，decode_half() 在 s_running=0 时填零，
      * codec 收到全零 PCM → DAC 静音 → 不碰硬件 MUTE/POWER 寄存器，无白噪声 */
 #ifdef MP3_PLARER_DBG
     log_i("pause at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
-
 }
 
 void mp3_player_resume(void)
@@ -179,7 +207,6 @@ void mp3_player_resume(void)
 #ifdef MP3_PLARER_DBG
     log_i("resume at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
-
 }
 
 /* Call from main while(1). Decodes the next frame into whichever half
@@ -190,28 +217,29 @@ void mp3_player_process(void)
     fill_req_t req = s_fill_req;
     s_fill_req     = FILL_NONE; /* atomic read-clear */
     __enable_irq();             /* re-enable BEFORE the early return */
-    int16_t             *p_buff_source = NULL;
-    
+    int16_t *p_buff_source = NULL;
     if(req == FILL_NONE)
+    {
         return;
+    }
+
     if(req == FILL_FIRST_HALF)
     {
         p_buff_source = &s_dma_buf[0];
     }
-    else 
+    else
     {
         p_buff_source = &s_dma_buf[PCM_HALF_LEN];
     }
-    decode_frame(p_buff_source);
+    decode_half(p_buff_source);
 
     if(!s_running)
     {
         /* Zero the OTHER half too — it still holds the last decoded frame.
          * DMA may be reading it right now; overwriting with silence is
          * safe and prevents that leftover PCM from being audible. */
-        int16_t *p_other = (req == FILL_FIRST_HALF)
-                               ? &s_dma_buf[PCM_HALF_LEN]
-                               : &s_dma_buf[0];
+        int16_t *p_other = (req == FILL_FIRST_HALF) ? &s_dma_buf[PCM_HALF_LEN]
+                                                    : &s_dma_buf[0];
         memset(p_other, 0, PCM_HALF_LEN * sizeof(int16_t));
         mp3_player_soft_stop();
     }
