@@ -13,17 +13,15 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "cs43lxxx_hal.h" /* cs43lxxx_hal lib header file. */
-#include "i2c.h"
-#include "i2s.h"
+#include "cs43lxxx_hal.h"     /* cs43lxxx_hal lib header file. */
+#include "i2c.h"              /* i2c lib header file. */
+#include "i2s.h"              /* i2s lib header file. */
 #include "bsp_cs43lxxx_drv.h" /* bsp_cs43lxxx_drv lib header file. */
 /* define   -----------------------------------------------------------------*/
-#define CS43LXXX_I2C_DELAY_MS  (10U) /* CS43LXXX I2C delay ms. */
+#define CS43LXXX_I2C_DELAY_MS  (8U) /* CS43LXXX I2C delay ms. */
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-cs43xxx_drv_t g_cs43l22_drv = {0};
-
 static cs43lxxx_status_t cs43lxxx_hal_i2c_write_reg(uint8_t  dev_addr,
                                                     uint16_t reg_addr,
                                                     uint8_t *p_data,
@@ -40,8 +38,8 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_dma_pause(void);
 static cs43lxxx_status_t cs43lxxx_hal_i2s_set_audio_freq(uint32_t freq_hz);
 static void              cs43lxxx_hal_delay_ms(uint32_t ms);
 static void              cs43lxxx_hal_power_control(uint8_t state);
-
-cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops =
+cs43xxx_drv_t            g_cs43l22_drv = {0};
+cs43lxxx_hal_ops_t       g_cs43lxxx_hal_ops =
     {.pf_i2c_read_reg          = cs43lxxx_hal_i2c_read_reg,
      .pf_i2c_write_reg         = cs43lxxx_hal_i2c_write_reg,
      .pf_i2s_transmit_with_dma = cs43lxxx_hal_i2s_transmit_dma,
@@ -53,7 +51,6 @@ cs43lxxx_hal_ops_t g_cs43lxxx_hal_ops =
      .pf_power_control         = cs43lxxx_hal_power_control};
 
 /* private  functions  ------------------------------------------------------*/
-
 /**
  * @brief            :  [cs43lxxx_hal_i2c_write_reg]
  * @retval           :  [
@@ -215,7 +212,5 @@ static cs43lxxx_status_t cs43lxxx_hal_i2s_set_audio_freq(uint32_t freq_hz)
 }
 
 /* exported functions -------------------------------------------------------*/
-
-
 
 /* end of  file -------------------------------------------------------------*/

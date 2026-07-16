@@ -1,19 +1,35 @@
-#define MP3P_TAG "mp3p"
+/**
+ ******************************************************************************
+ *@file               :   mp3_player.c
+ *
+ *@brief              :   Provide the HAL APIs of description.
+ *
+ *@version            :   V1.0
+ *
+ *@note               :   1 tab == 4 spaces!  2026
+ *
+ *@pardependencies    :   mp3_player.c
+ ******************************************************************************
+ */
+
+/* Includes -----------------------------------------------------------------*/
+#include <stddef.h>     /* stdint lib header file. */
+#include "stm32f4xx.h" /* __disable_irq / __enable_irq (CMSIS) */
+#include "mp3_player.h" /* mp3_player lib header file. */
+
 // #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_ONLY_MP3     1
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3.h"
-#include "mp3_player.h"
 #include "audio_out.h"
-#include "stm32f4xx.h" /* __disable_irq / __enable_irq (CMSIS) */
 #include <string.h>
 
 #define MP3_PLARER_DBG
-#ifdef MP3_PLARER_DBG
+#ifdef  MP3_PLARER_DBG
 #define MP3_PLARERTAG "mp3player"
 #include "elog.h"
 #endif // end of MP3_PLARER_DBG
-
+/* define   -----------------------------------------------------------------*/
 /* Each MPEG1 L3 frame = 1152 samples/ch; minimp3 outputs interleaved stereo,
  * so MINIMP3_MAX_SAMPLES_PER_FRAME = 1152*2 = 2304 int16.
  * Double-buffer: first half played while second half is decoded, vice-versa. */
@@ -22,23 +38,29 @@
 #define PCM_BUF_LEN      (PCM_HALF_LEN * 2U)           /* 4608 int16 total   */
 #define MP3_IN_BUF_SIZE  (2048U)                       /* input read buffer  */
 
+#define MP3_PLAYER_ENTERN_CRITICAL()              __disable_irq()
+
+#define MP3_PLAYER_EXIT_CRITICAL()                __enable_irq()
+/* typedef ------------------------------------------------------------------*/
 typedef enum
 {
     FILL_NONE = 0,
     FILL_FIRST_HALF,
     FILL_SECOND_HALF,
 } fill_req_t;
-
+/* variables ----------------------------------------------------------------*/
 static mp3dec_t            s_dec;
 static mp3dec_frame_info_t s_frame_info;
 static const mp3_src_t    *sp_src;
 static uint32_t            s_offset;
 static int16_t             s_dma_buf[PCM_BUF_LEN];
 static uint8_t             s_in_buf[MP3_IN_BUF_SIZE];
-static volatile fill_req_t s_fill_req    = FILL_NONE;
-static volatile uint8_t    s_running     = 0;
-static volatile uint8_t    s_dma_running = 0; /* DMA 物理上是否在运行 */
-static volatile uint8_t s_codec_awake = 0; /* codec 是否处于唤醒状态（非 PDN）*/
+static volatile fill_req_t s_fill_req = FILL_NONE;
+static volatile uint8_t    s_running  = 0;
+/* DMA 物理上是否在运行 */
+static volatile uint8_t s_dma_running = 0;
+/* codec 是否处于唤醒状态（非 PDN）*/
+static volatile uint8_t s_codec_awake = 0;
 
 /* Forward declarations — needed for s_out_cb initializer below */
 static void mp3_isr_player_tx_half_cplt(void);
@@ -48,11 +70,7 @@ static const audio_out_cb_cfg_t s_out_cb = {
     .pf_half_cplt = mp3_isr_player_tx_half_cplt,
     .pf_cplt      = mp3_isr_player_tx_cplt,
 };
-
-void mp3_player_init(void)
-{
-    audio_out_init(&s_out_cb);
-}
+/* private  functions  ------------------------------------------------------*/
 
 /* Decode MP3 frames into p_out until PCM_HALF_LEN int16 are filled.
  * Loops across frames so MPEG2 (576 samples/frame) and MPEG1 (1152
@@ -127,6 +145,28 @@ static void decode_half(int16_t *p_out)
     }
 }
 
+/* ISR callbacks — set flag only, no heavy work here */
+static void mp3_isr_player_tx_half_cplt(void)
+{
+    s_fill_req = FILL_FIRST_HALF;
+}
+
+static void mp3_isr_player_tx_cplt(void)
+{
+    s_fill_req = FILL_SECOND_HALF;
+}
+/* exported functions -------------------------------------------------------*/
+/**
+ * @brief            :  [mp3_player_init]
+ */
+void mp3_player_init(void)
+{
+    audio_out_init(&s_out_cb);
+}
+/**
+ * @brief            :  [mp3_player_start]
+ * @param[in]        :  [const mp3_src_t *p_src]
+ */
 void mp3_player_start(const mp3_src_t *p_src)
 {
     mp3dec_init(&s_dec);
@@ -134,9 +174,9 @@ void mp3_player_start(const mp3_src_t *p_src)
     s_offset      = 0;
     s_running     = 1;
     s_codec_awake = 1;
-    __disable_irq();
+    MP3_PLAYER_ENTERN_CRITICAL();
     s_fill_req = FILL_NONE;
-    __enable_irq();
+    MP3_PLAYER_EXIT_CRITICAL();
 
     if(!s_dma_running)
     {
@@ -158,7 +198,9 @@ void mp3_player_start(const mp3_src_t *p_src)
           s_frame_info.frame_bytes, s_dma_running);
 #endif // end of MP3_PLARER_DBG
 }
-
+/**
+ * @brief            :  [mp3_player_stop]
+ */
 void mp3_player_stop(void)
 {
     s_running     = 0;
@@ -169,41 +211,47 @@ void mp3_player_stop(void)
     log_i("stopped at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
 }
-
+/**
+ * @brief            :  [mp3_player_soft_stop]
+ */
 void mp3_player_soft_stop(void)
 {
     if(!s_codec_awake)
         return; /* codec 已在 PDN，防止重复 I2C 写入 */
     s_codec_awake = 0;
     s_running     = 0;
-    __disable_irq();
+    MP3_PLAYER_ENTERN_CRITICAL();
     s_fill_req = FILL_NONE;
-    __enable_irq();
+    MP3_PLAYER_EXIT_CRITICAL();
     audio_out_soft_stop(); /* 仅写 PDN，DMA 保持运行 */
 #ifdef MP3_PLARER_DBG
     log_i("soft_stop at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
 }
-
+/**
+ * @brief            :  [mp3_player_is_playing]
+ * @retval           :  [s_running]
+ */
 uint8_t mp3_player_is_playing(void)
 {
     return s_running;
 }
-
+/**
+ * @brief            :  [mp3_player_pause]
+ */
 void mp3_player_pause(void)
 {
     s_running = 0;
-    /* DMA 继续运行，decode_half() 在 s_running=0 时填零，
-     * codec 收到全零 PCM → DAC 静音 → 不碰硬件 MUTE/POWER 寄存器，无白噪声 */
 #ifdef MP3_PLARER_DBG
     log_i("pause at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
 }
-
+/**
+ * @brief            :  [mp3_player_resume]
+ */
 void mp3_player_resume(void)
 {
     s_running = 1;
-    /* DMA 本来就在跑，下一次 ISR 触发后 decode_frame() 恢复解码真实音频 */
 #ifdef MP3_PLARER_DBG
     log_i("resume at offset=%lu", s_offset);
 #endif // end of MP3_PLARER_DBG
@@ -213,10 +261,10 @@ void mp3_player_resume(void)
  * the ISR flagged. Must complete within one frame period (~26 ms). */
 void mp3_player_process(void)
 {
-    __disable_irq();
+    MP3_PLAYER_ENTERN_CRITICAL();
     fill_req_t req = s_fill_req;
     s_fill_req     = FILL_NONE; /* atomic read-clear */
-    __enable_irq();             /* re-enable BEFORE the early return */
+    MP3_PLAYER_EXIT_CRITICAL(); /* re-enable BEFORE the early return */
     int16_t *p_buff_source = NULL;
     if(req == FILL_NONE)
     {
@@ -245,14 +293,4 @@ void mp3_player_process(void)
     }
 }
 
-/* ISR callbacks — set flag only, no heavy work here */
-
-static void mp3_isr_player_tx_half_cplt(void)
-{
-    s_fill_req = FILL_FIRST_HALF;
-}
-
-static void mp3_isr_player_tx_cplt(void)
-{
-    s_fill_req = FILL_SECOND_HALF;
-}
+/* end of  file -------------------------------------------------------------*/

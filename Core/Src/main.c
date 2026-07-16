@@ -6184,7 +6184,7 @@ int main(void)
         .p_ctx      = (void *)Array,
         .total_size = sizeof(Array),
     };
-    // mp3_player_start(&s_flash_src);
+    mp3_player_start(&s_flash_src);
 
   /* USER CODE END 2 */
 
@@ -6198,7 +6198,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
         mp3_player_process();
 
-        /* soft_stop 测试：播完后等 5s 重播（可循环） */
+        /* soft_stop 测试：播完后等 5s 重播可循环 */
         {
             static uint8_t   s_test_state = 0; /* 0=播放中 1=已停止等待 */
             static uint32_t  s_stop_tick  = 0;

@@ -14,7 +14,7 @@
 #include "bsp_cs43lxxx_drv.h" /* cs43lxxx_instruct, CS43XXX_I2C_ADDR_7BIT   */
 
 #define AUDIO_DBG
-#ifdef AUDIO_DBG
+#ifdef  AUDIO_DBG
 #define AOUT_TAG "aout"
 #include "elog.h"
 #endif // end of AUDIO_DBG
@@ -30,7 +30,12 @@ typedef struct
 static audio_out_ctx_t s_ctx = {NULL, {NULL, NULL}};
 
 /* exported functions -------------------------------------------------------*/
-
+/**
+ * @brief            :  [audio_out_init]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [const audio_out_cb_cfg_t *p_cb]
+ */
 audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
 {
     if(p_cb == NULL)
@@ -62,6 +67,12 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
     return AUDIO_OUT_OK;
 }
 
+/**
+ * @brief            :  [audio_out_start]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [int16_t *p_buf, uint16_t len]
+ */
 audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
 {
     if(p_buf == NULL || s_ctx.p_drv == NULL)
@@ -88,6 +99,9 @@ audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
     return AUDIO_OUT_OK;
 }
 
+/**
+ * @brief            :  [audio_out_stop]
+ */
 void audio_out_stop(void)
 {
     if(s_ctx.p_drv != NULL)
@@ -96,6 +110,9 @@ void audio_out_stop(void)
     }
 }
 
+/**
+ * @brief            :  [audio_out_soft_stop]
+ */
 void audio_out_soft_stop(void)
 {
     if(s_ctx.p_drv != NULL)
@@ -104,6 +121,9 @@ void audio_out_soft_stop(void)
     }
 }
 
+/**
+ * @brief            :  [audio_out_play]
+ */
 void audio_out_play(void)
 {
     if(s_ctx.p_drv != NULL)
@@ -112,7 +132,9 @@ void audio_out_play(void)
     }
 }
 
-
+/**
+ * @brief            :  [audio_out_pause]
+ */
 void audio_out_pause(void)
 {
     if(s_ctx.p_drv != NULL)
@@ -122,7 +144,9 @@ void audio_out_pause(void)
     }
 
 }
-
+/**
+ * @brief            :  [audio_out_resume]
+ */
 void audio_out_resume(void)
 {
     if(s_ctx.p_drv != NULL)
@@ -133,15 +157,28 @@ void audio_out_resume(void)
 
 }
 
-
+/**
+ * @brief            :  [audio_out_set_sample_rate]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [uint32_t hz]
+ */
 audio_out_status_t audio_out_set_sample_rate(uint32_t hz)
 {
     if(s_ctx.p_drv == NULL || s_ctx.p_drv->p_hal_ops == NULL)
+    {
         return AUDIO_OUT_ERROR;
+    }
+
     cs43lxxx_status_t ret = s_ctx.p_drv->p_hal_ops->pf_i2s_set_audio_freq(hz);
     return (ret == CS43LXXX_STATUS_OK) ? AUDIO_OUT_OK : AUDIO_OUT_ERROR;
 }
-
+/**
+ * @brief            :  [audio_out_set_volume]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [uint8_t vol]
+ */
 audio_out_status_t audio_out_set_volume(uint8_t vol)
 {
     if(s_ctx.p_drv == NULL)
@@ -154,7 +191,9 @@ audio_out_status_t audio_out_set_volume(uint8_t vol)
 }
 
 
-
+/**
+ * @brief            :  [audio_out_tx_half_cplt]
+ */
 void audio_out_tx_half_cplt(void)
 {
     if(s_ctx.cb.pf_half_cplt != NULL)
@@ -164,6 +203,9 @@ void audio_out_tx_half_cplt(void)
 
 }
 
+/**
+ * @brief            :  [audio_out_tx_half_cplt]
+ */
 void audio_out_tx_cplt(void)
 {
     if(s_ctx.cb.pf_cplt != NULL)
@@ -172,5 +214,4 @@ void audio_out_tx_cplt(void)
     }
 
 }
-
 /* end of file --------------------------------------------------------------*/
