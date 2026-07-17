@@ -55,7 +55,7 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG
-        log_e(AOUT_TAG, "instruct failed ret=%d", ret);
+       log_e(AOUT_TAG, "instruct failed ret=%d", ret);
 #endif // end of AUDIO_DBG
 
         return AUDIO_OUT_ERROR;

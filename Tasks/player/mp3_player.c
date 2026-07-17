@@ -31,16 +31,15 @@
 #endif // end of MP3_PLARER_DBG
 /* define   -----------------------------------------------------------------*/
 /* Each MPEG1 L3 frame = 1152 samples/ch; minimp3 outputs interleaved stereo,
- * so MINIMP3_MAX_SAMPLES_PER_FRAME = 1152*2 = 2304 int16.
- * Double-buffer: first half played while second half is decoded, vice-versa. */
+so MINIMP3_MAX_SAMPLES_PER_FRAME = 1152*2 = 2304 int16.
+Double-buffer: first half played while second half is decoded, vice-versa.*/
 #define FRAME_SAMPLES    MINIMP3_MAX_SAMPLES_PER_FRAME /* 2304 int16, stereo */
-#define PCM_HALF_LEN     FRAME_SAMPLES
+#define PCM_HALF_LEN     FRAME_SAMPLES                 /* 2304 int16, stereo */
 #define PCM_BUF_LEN      (PCM_HALF_LEN * 2U)           /* 4608 int16 total   */
 #define MP3_IN_BUF_SIZE  (2048U)                       /* input read buffer  */
 
-#define MP3_PLAYER_ENTERN_CRITICAL()              __disable_irq()
-
-#define MP3_PLAYER_EXIT_CRITICAL()                __enable_irq()
+#define MP3_PLAYER_ENTERN_CRITICAL()    // __disable_irq()
+#define MP3_PLAYER_EXIT_CRITICAL()      // __enable_irq()
 /* typedef ------------------------------------------------------------------*/
 typedef enum
 {
@@ -73,9 +72,9 @@ static const audio_out_cb_cfg_t s_out_cb = {
 /* private  functions  ------------------------------------------------------*/
 
 /* Decode MP3 frames into p_out until PCM_HALF_LEN int16 are filled.
- * Loops across frames so MPEG2 (576 samples/frame) and MPEG1 (1152
- * samples/frame) both fill the buffer completely.  Expands mono to interleaved
- * stereo in-place. */
+  Loops across frames so MPEG2 (576 samples/frame) and MPEG1 (1152
+  samples/frame) both fill the buffer completely.  Expands mono to interleaved
+  stereo in-place. */
 static void decode_half(int16_t *p_out)
 {
     memset(p_out, 0, PCM_HALF_LEN * sizeof(int16_t));
@@ -194,8 +193,8 @@ void mp3_player_start(const mp3_src_t *p_src)
     }
 #ifdef MP3_PLARER_DBG
     log_i("start: sr=%d ch=%d rate=%d fram byte=%d dma_was_running=%d",
-          s_frame_info.hz, s_frame_info.channels, s_frame_info.bitrate_kbps,
-          s_frame_info.frame_bytes, s_dma_running);
+          s_frame_info.hz,s_frame_info.channels, s_frame_info.bitrate_kbps,
+          s_frame_info.frame_bytes,s_dma_running);
 #endif // end of MP3_PLARER_DBG
 }
 /**
@@ -217,7 +216,10 @@ void mp3_player_stop(void)
 void mp3_player_soft_stop(void)
 {
     if(!s_codec_awake)
+    {
         return; /* codec 已在 PDN，防止重复 I2C 写入 */
+    }
+
     s_codec_awake = 0;
     s_running     = 0;
     MP3_PLAYER_ENTERN_CRITICAL();
@@ -288,6 +290,7 @@ void mp3_player_process(void)
          * safe and prevents that leftover PCM from being audible. */
         int16_t *p_other = (req == FILL_FIRST_HALF) ? &s_dma_buf[PCM_HALF_LEN]
                                                     : &s_dma_buf[0];
+                                                    
         memset(p_other, 0, PCM_HALF_LEN * sizeof(int16_t));
         mp3_player_soft_stop();
     }

@@ -18,7 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "i2c.h"
 #include "i2s.h"
 #include "spi.h"
@@ -43,7 +45,7 @@
 
 /*----The Length of This Array is 52079 Byte.----*/
 /*----The Length of This Array is 47646 Byte.----*/
-const unsigned char Array[]={
+const uint8_t Array[47646]={
 
 0xFF,0xF3,0xC0,0xC4,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x49,0x6E,0x66,
 
@@ -6023,10 +6025,9 @@ const unsigned char Array[]={
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
-void MX_USB_HOST_Process(void);
-
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-static uint32_t flash_src_read(void    *p_ctx,
+uint32_t flash_src_read(void    *p_ctx,
                                uint32_t offset,
                                uint8_t *p_buf,
                                uint32_t len);
@@ -6036,7 +6037,7 @@ static uint32_t flash_src_read(void    *p_ctx,
 /* USER CODE BEGIN 0 */
 static void elog_init_handler(void);
 
-static uint32_t flash_src_read(void    *p_ctx,
+uint32_t flash_src_read(void    *p_ctx,
                                uint32_t offset,
                                uint8_t *p_buf,
                                uint32_t len)
@@ -6083,8 +6084,8 @@ int main(void)
   MX_I2S2_Init();
   MX_I2S3_Init();
   MX_SPI1_Init();
-  MX_USB_HOST_Init();
   MX_USART1_UART_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
     elog_init_handler();
 
@@ -6179,44 +6180,74 @@ int main(void)
 
     }
 
-    static const mp3_src_t s_flash_src = {
-        .pf_read    = flash_src_read,
-        .p_ctx      = (void *)Array,
-        .total_size = sizeof(Array),
-    };
-    mp3_player_start(&s_flash_src);
+    /* SPI waveform test — scope probe on PA5(SCK) PA7(MOSI) PC4(CS) */
+    {
+        uint8_t cmd0[6] = {0x5A, 0xA5, 0x22, 0x23, 0x24, 0x5A};
+        while(1)
+        {
+                    uint8_t tx[10];
+        uint8_t rx[10];
+        extern SPI_HandleTypeDef hspi1;
 
+        /* CS high: SD card idle state */
+//        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+//        HAL_Delay(1);
+
+        /* 80 clocks with CS high: SD card power-up requirement */
+//        memset(tx, 0xFF, sizeof(tx));
+//        HAL_SPI_TransmitReceive(&hspi1, tx, rx, 10, 100);
+
+        /* CS low: start command */
+        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+
+        /* CMD0 GO_IDLE_STATE */
+        
+        HAL_SPI_Transmit(&hspi1, cmd0, 6, 100);
+        /* CS high */
+        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+//        for(uint8_t i = 0; i<sizeof(cmd0);i++)
+//        {
+//            cmd0[i] +=1;
+//            log_i("cmd0[%d] %d",i,cmd0[i]);
+//        }
+        
+//        /* Poll R1 response (expect 0x01, max 8 bytes) */
+//        uint8_t resp = 0xFF;
+//        uint8_t dummy = 0xFF;
+//        for(int i = 0; i < 8 && resp == 0xFF; i++)
+//        {
+//            HAL_SPI_TransmitReceive(&hspi1, &dummy, &resp, 1, 100);
+//        }
+
+
+
+//        log_i("[spi_test] CMD0 resp=0x%02X (%s)",
+//              resp,
+//              (resp == 0x01) ? "OK idle" : (resp == 0xFF) ? "no resp" : "unexpected");
+        HAL_Delay(1000);
+        }
+
+    }
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while(1)
     {
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-        mp3_player_process();
-
-        /* soft_stop 测试：播完后等 5s 重播可循环 */
-        {
-            static uint8_t   s_test_state = 0; /* 0=播放中 1=已停止等待 */
-            static uint32_t  s_stop_tick  = 0;
-
-            if(s_test_state == 0 && !mp3_player_is_playing())
-            {
-                s_stop_tick  = HAL_GetTick();
-                s_test_state = 1;
-//                log_i(MAIN_TAG, "EOS: soft_stop, wait 5s");
-            }
-            else if(s_test_state == 1
-                    && (HAL_GetTick() - s_stop_tick) >= 5000U)
-            {
-//                log_i(MAIN_TAG, "replay");
-                mp3_player_start(&s_flash_src);
-                s_test_state = 0;
-            }
-        }
     }
 
   /* USER CODE END 3 */
@@ -6333,6 +6364,28 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
     }
 }
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM10 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM10)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
