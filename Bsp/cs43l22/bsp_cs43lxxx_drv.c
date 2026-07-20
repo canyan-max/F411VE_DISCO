@@ -644,7 +644,7 @@ cs43lxxx_status_t cs43lxxx_instruct(cs43xxx_drv_t      *p_drv,
     p_drv->pf_resume     = cs43lxxx_resume;
     p_drv->pf_pause      = cs43lxxx_pause;
     /* Try to initialize the device once. */
-    cs43lxxx_status_t ret = p_drv->pf_init(p_drv, 70);
+    cs43lxxx_status_t ret = p_drv->pf_init(p_drv, 80);
     if(CS43LXXX_STATUS_OK != ret)
     {
         /* Init failed, clear all self ops and mark as not initialized. */
