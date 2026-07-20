@@ -32,9 +32,8 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
-#define MAIN_TAG "main"
 #include "elog.h"
-#include "cs43lxxx_hal.h"    /* g_cs43lxxx_hal_ops, g_cs43l22_drv          */
+#include "cs43lxxx_hal.h"    /* g_cs43lxxx_hal_ops, g_cs43l22_drv           */
 #include "cs43lxxx_regmap.h" /* CS43L22_REG_* constants for verify reads    */
 #include "audio_out.h"
 #include "mp3_player.h"
@@ -6028,9 +6027,9 @@ void PeriphCommonClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 uint32_t flash_src_read(void    *p_ctx,
-                               uint32_t offset,
-                               uint8_t *p_buf,
-                               uint32_t len);
+                        uint32_t offset,
+                        uint8_t *p_buf,
+                        uint32_t len);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -6090,7 +6089,6 @@ int main(void)
     elog_init_handler();
 
     mp3_player_init();
-
     {
         uint8_t           rd_val = 0;
         cs43lxxx_status_t rd_ret = CS43LXXX_STATUS_OK;
@@ -6180,54 +6178,6 @@ int main(void)
 
     }
 
-    /* SPI waveform test — scope probe on PA5(SCK) PA7(MOSI) PC4(CS) */
-    {
-        uint8_t cmd0[6] = {0x5A, 0xA5, 0x22, 0x23, 0x24, 0x5A};
-        while(1)
-        {
-                    uint8_t tx[10];
-        uint8_t rx[10];
-        extern SPI_HandleTypeDef hspi1;
-
-        /* CS high: SD card idle state */
-//        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
-//        HAL_Delay(1);
-
-        /* 80 clocks with CS high: SD card power-up requirement */
-//        memset(tx, 0xFF, sizeof(tx));
-//        HAL_SPI_TransmitReceive(&hspi1, tx, rx, 10, 100);
-
-        /* CS low: start command */
-        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
-
-        /* CMD0 GO_IDLE_STATE */
-        
-        HAL_SPI_Transmit(&hspi1, cmd0, 6, 100);
-        /* CS high */
-        HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
-//        for(uint8_t i = 0; i<sizeof(cmd0);i++)
-//        {
-//            cmd0[i] +=1;
-//            log_i("cmd0[%d] %d",i,cmd0[i]);
-//        }
-        
-//        /* Poll R1 response (expect 0x01, max 8 bytes) */
-//        uint8_t resp = 0xFF;
-//        uint8_t dummy = 0xFF;
-//        for(int i = 0; i < 8 && resp == 0xFF; i++)
-//        {
-//            HAL_SPI_TransmitReceive(&hspi1, &dummy, &resp, 1, 100);
-//        }
-
-
-
-//        log_i("[spi_test] CMD0 resp=0x%02X (%s)",
-//              resp,
-//              (resp == 0x01) ? "OK idle" : (resp == 0xFF) ? "no resp" : "unexpected");
-        HAL_Delay(1000);
-        }
-
-    }
   /* USER CODE END 2 */
 
   /* Init scheduler */

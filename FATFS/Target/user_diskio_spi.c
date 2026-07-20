@@ -26,6 +26,7 @@
 
 #include "stm32f4xx_hal.h" /* Provide the low-level HAL functions */
 #include "user_diskio_spi.h"
+#include <string.h>
 
 //If you want to use a different SPI port change hspi1 here and elsewhere in this file
 extern SPI_HandleTypeDef hspi1;
@@ -33,8 +34,8 @@ extern SPI_HandleTypeDef hspi1;
 /* Function prototypes */
 
 //(Note that the _256 is used as a mask to clear the prescalar bits as it provides binary 111 in the correct position)
-#define FCLK_SLOW() { MODIFY_REG(hspi1.Instance->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_128); }	/* Set SCLK = slow, approx 280 KBits/s*/
-#define FCLK_FAST() { MODIFY_REG(hspi1.Instance->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_8); }	/* Set SCLK = fast, approx 4.5 MBits/s */
+#define FCLK_SLOW() { MODIFY_REG(hspi1.Instance->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_256); }	/* Set SCLK = slow, 375 KHz (96MHz/256) */
+#define FCLK_FAST() { MODIFY_REG(hspi1.Instance->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_4);   }	/* Set SCLK = fast, 24 MHz (96MHz/4) — SD SPI max 25MHz         */
 
 #define CS_HIGH()	{HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);}
 #define CS_LOW()	{HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);}
@@ -118,10 +119,11 @@ void rcvr_spi_multi (
     UINT btr		/* Number of bytes to receive (even number) */
 )
 {
-    for(UINT i = 0; i < btr; i++)
-    {
-        *(buff + i) = xchg_spi(0xFF);
-    }
+//    memset(buff, 0xFF, btr);
+//    HAL_SPI_TransmitReceive(&hspi1, buff, buff, (uint16_t)btr, HAL_MAX_DELAY);
+    for(UINT i=0; i<btr; i++) {
+		*(buff+i) = xchg_spi(0xFF);
+	}
 }
 
 
@@ -133,10 +135,10 @@ void xmit_spi_multi (
     UINT btx			/* Number of bytes to send (even number) */
 )
 {
-    for(UINT i = 0; i < btx; i++)
-    {
-        xchg_spi(*(buff + i));
-    }
+    for(UINT i=0; i<btx; i++) {
+		xchg_spi(*(buff+i));
+	}
+//    HAL_SPI_Transmit(&hspi1, (BYTE *)buff, (uint16_t)btx, HAL_MAX_DELAY);
 }
 #endif
 

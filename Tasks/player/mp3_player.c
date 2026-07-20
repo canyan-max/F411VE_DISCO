@@ -26,7 +26,6 @@
 
 #define MP3_PLARER_DBG
 #ifdef  MP3_PLARER_DBG
-#define MP3_PLARERTAG "mp3player"
 #include "elog.h"
 #endif // end of MP3_PLARER_DBG
 /* define   -----------------------------------------------------------------*/
@@ -36,7 +35,7 @@ Double-buffer: first half played while second half is decoded, vice-versa.*/
 #define FRAME_SAMPLES    MINIMP3_MAX_SAMPLES_PER_FRAME /* 2304 int16, stereo */
 #define PCM_HALF_LEN     FRAME_SAMPLES                 /* 2304 int16, stereo */
 #define PCM_BUF_LEN      (PCM_HALF_LEN * 2U)           /* 4608 int16 total   */
-#define MP3_IN_BUF_SIZE  (2048U)                       /* input read buffer  */
+#define MP3_IN_BUF_SIZE  (4096U)                       /* input read buffer  */
 
 #define MP3_PLAYER_ENTERN_CRITICAL()    // __disable_irq()
 #define MP3_PLAYER_EXIT_CRITICAL()      // __enable_irq()
@@ -47,11 +46,15 @@ typedef enum
     FILL_FIRST_HALF,
     FILL_SECOND_HALF,
 } fill_req_t;
+/* MP3 最大帧字节数（MPEG1 L3 320kbps 约 1045B，取安全上限） */
+#define MP3_MAX_FRAME_BYTES  1440U
+
 /* variables ----------------------------------------------------------------*/
 static mp3dec_t            s_dec;
 static mp3dec_frame_info_t s_frame_info;
 static const mp3_src_t    *sp_src;
-static uint32_t            s_offset;
+static uint32_t            s_offset;   /* s_in_buf[0] 对应的文件绝对偏移 */
+static uint32_t            s_in_fill;  /* s_in_buf 中有效字节数 */
 static int16_t             s_dma_buf[PCM_BUF_LEN];
 static uint8_t             s_in_buf[MP3_IN_BUF_SIZE];
 static volatile fill_req_t s_fill_req = FILL_NONE;
@@ -78,65 +81,67 @@ static const audio_out_cb_cfg_t s_out_cb = {
 static void decode_half(int16_t *p_out)
 {
     memset(p_out, 0, PCM_HALF_LEN * sizeof(int16_t));
-    if(!s_running)
-        return;
-
-    uint32_t written = 0; /* int16 slots filled in p_out */
-
-    while(written < PCM_HALF_LEN && s_running)
+    if (!s_running)
     {
-        if(s_offset >= sp_src->total_size)
+        return;
+    }
+
+    uint32_t written = 0;
+    while (written < PCM_HALF_LEN && s_running)
+    {
+        /* 缓冲区不足一帧时从源补充数据（顺序读，不回退） */
+        if (s_in_fill < MP3_MAX_FRAME_BYTES)
+        {
+            uint32_t file_pos = s_offset + s_in_fill;
+            if (file_pos < sp_src->total_size)
+            {
+                uint32_t space   = MP3_IN_BUF_SIZE - s_in_fill;
+                uint32_t remain  = sp_src->total_size - file_pos;
+                uint32_t to_read = (remain < space) ? remain : space;
+                uint32_t got     = sp_src->pf_read(sp_src->p_ctx, file_pos,
+                                                   s_in_buf + s_in_fill,
+                                                   to_read);
+                s_in_fill += got;
+            }
+        }
+
+        if (s_in_fill == 0)
         {
             s_running = 0; /* EOS */
             return;
         }
 
-        uint32_t remaining = sp_src->total_size - s_offset;
-        uint32_t to_read   = (remaining < MP3_IN_BUF_SIZE) ? remaining
-                                                           : MP3_IN_BUF_SIZE;
-        uint32_t avail     = sp_src->pf_read(sp_src->p_ctx, s_offset, s_in_buf,
-                                             to_read);
-        if(avail == 0)
-        {
-            return;
-        }
-
-        int samples = mp3dec_decode_frame(&s_dec, s_in_buf, (int)avail,
+        int samples = mp3dec_decode_frame(&s_dec, s_in_buf, (int)s_in_fill,
                                           p_out + written, &s_frame_info);
 
-        if(s_frame_info.frame_bytes > 0)
+        uint32_t consumed = (s_frame_info.frame_bytes > 0)
+                            ? (uint32_t)s_frame_info.frame_bytes : 1U;
+
+        /* 滑动缓冲区，丢弃已消耗的字节 */
+        s_in_fill -= consumed;
+        if (s_in_fill > 0)
         {
-            s_offset += (uint32_t)s_frame_info.frame_bytes;
+            memmove(s_in_buf, s_in_buf + consumed, s_in_fill);
         }
-        else
+        s_offset += consumed;
+
+        if (samples <= 0)
         {
-            s_offset++;
             continue;
         }
 
-        if(samples <= 0)
+        uint32_t int16_out = (uint32_t)samples * (uint32_t)s_frame_info.channels;
+        if (s_frame_info.channels == 1)
         {
-            continue;
-        }
-
-        /* int16 count written by the decoder */
-        uint32_t int16_out = (uint32_t)samples *
-                             (uint32_t)s_frame_info.channels;
-
-        if(s_frame_info.channels == 1)
-        {
-            /* mono→stereo in-place (right-to-left traversal is safe) */
             int16_t *pf = p_out + written;
-            for(int i = samples - 1; i >= 0; i--)
+            for (int i = samples - 1; i >= 0; i--)
             {
                 pf[i * 2 + 1] = pf[i];
                 pf[i * 2]     = pf[i];
             }
             int16_out = (uint32_t)samples * 2U;
         }
-
-        /* safety: don't exceed buffer */
-        if(written + int16_out > PCM_HALF_LEN)
+        if (written + int16_out > PCM_HALF_LEN)
         {
             int16_out = PCM_HALF_LEN - written;
         }
@@ -171,26 +176,18 @@ void mp3_player_start(const mp3_src_t *p_src)
     mp3dec_init(&s_dec);
     sp_src        = p_src;
     s_offset      = 0;
+    s_in_fill     = 0;
     s_running     = 1;
     s_codec_awake = 1;
     MP3_PLAYER_ENTERN_CRITICAL();
     s_fill_req = FILL_NONE;
     MP3_PLAYER_EXIT_CRITICAL();
 
-    if(!s_dma_running)
-    {
-        /* 首次启动：预填两半，设置采样率，然后启动 DMA + 唤醒 codec */
-        decode_half(&s_dma_buf[0]);
-        audio_out_set_sample_rate((uint32_t)s_frame_info.hz);
-        decode_half(&s_dma_buf[PCM_HALF_LEN]);
-        s_dma_running = 1;
-        audio_out_start(s_dma_buf, PCM_BUF_LEN);
-    }
-    else
-    {
-        /* DMA 已在运行（soft_stop 后保持运行），只需唤醒 codec */
-        audio_out_play();
-    }
+    decode_half(&s_dma_buf[0]);
+    audio_out_set_sample_rate((uint32_t)s_frame_info.hz);
+    decode_half(&s_dma_buf[PCM_HALF_LEN]);
+    s_dma_running = 1;
+    audio_out_start(s_dma_buf, PCM_BUF_LEN);
 #ifdef MP3_PLARER_DBG
     log_i("start: sr=%d ch=%d rate=%d fram byte=%d dma_was_running=%d",
           s_frame_info.hz,s_frame_info.channels, s_frame_info.bitrate_kbps,

@@ -55,13 +55,13 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG
-       log_e(AOUT_TAG, "instruct failed ret=%d", ret);
+       log_e("instruct failed ret=%d", ret);
 #endif // end of AUDIO_DBG
 
         return AUDIO_OUT_ERROR;
     }
 #ifdef AUDIO_DBG
-    log_i(AOUT_TAG, "init ok is_init=%d", s_ctx.p_drv->is_init);
+    log_i("init ok is_init=%d", s_ctx.p_drv->is_init);
 #endif // end of AUDIO_DBG
 
     return AUDIO_OUT_OK;
@@ -78,11 +78,14 @@ audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
     if(p_buf == NULL || s_ctx.p_drv == NULL)
         return AUDIO_OUT_ERROR;
 
+    /* 确保 DMA 和 HAL 状态为 READY，重复调用或空 DMA 均安全 */
+    s_ctx.p_drv->p_hal_ops->pf_i2s_stop_dma();
+
     cs43lxxx_status_t ret = s_ctx.p_drv->pf_play(s_ctx.p_drv);
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG
-        log_e(AOUT_TAG, "pf_play failed ret=%d", ret);
+        log_e("pf_play failed ret=%d", ret);
 #endif // end of AUDIO_DBG
         return AUDIO_OUT_ERROR;
     }
@@ -91,7 +94,7 @@ audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
     if(ret != CS43LXXX_STATUS_OK)
     {
 #ifdef AUDIO_DBG
-        log_e(AOUT_TAG, "i2s transmit failed ret=%d", ret);
+        log_e("i2s transmit failed ret=%d", ret);
 #endif // end of AUDIO_DBG
         return AUDIO_OUT_ERROR;
     }

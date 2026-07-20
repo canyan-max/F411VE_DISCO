@@ -31,6 +31,7 @@
 #include "mp3_player.h"
 #include <string.h>
 #include "elog.h"
+#include "fatfs.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,11 +63,33 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-extern uint8_t Array[47646];
-extern uint32_t flash_src_read(void    *p_ctx,
-                               uint32_t offset,
-                               uint8_t *p_buf,
-                               uint32_t len);
+static FATFS s_sd_fs;
+static FIL   s_sd_file;
+
+static uint32_t sd_src_read(void    *p_ctx,
+                            uint32_t offset,
+                            uint8_t *p_buf,
+                            uint32_t len)
+{
+    FIL    *p_file = (FIL *)p_ctx;
+    UINT    br;
+    FRESULT fr;
+
+    if (f_tell(p_file) != (FSIZE_t)offset)
+    {
+        fr = f_lseek(p_file, (FSIZE_t)offset);
+        if (fr != FR_OK)
+        {
+            return 0U;
+        }
+    }
+    fr = f_read(p_file, p_buf, (UINT)len, &br);
+    if (fr != FR_OK)
+    {
+        return 0U;
+    }
+    return (uint32_t)br;
+}
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -124,40 +147,53 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_HOST */
-  MX_USB_HOST_Init();
+//  MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
-    static const mp3_src_t s_flash_src = {
-    .pf_read    = flash_src_read,
-    .p_ctx      = (void *)Array,
-    .total_size = sizeof(Array),
-    };
-    mp3_player_start(&s_flash_src);
+
+    static mp3_src_t s_sd_src;
+    FRESULT          fr;
+
+    fr = f_mount(&s_sd_fs, USERPath, 1);
+    log_i("[player] f_mount=%d", (int)fr);
+
+    if (fr == FR_OK)
+    {
+        fr = f_open(&s_sd_file, "0:/SSFF.MP3", FA_READ);
+        log_i("[player] f_open=%d size=%lu",
+              (int)fr, (unsigned long)f_size(&s_sd_file));
+
+        if (fr == FR_OK)
+        {
+            s_sd_src.pf_read    = sd_src_read;
+            s_sd_src.p_ctx      = &s_sd_file;
+            s_sd_src.total_size = (uint32_t)f_size(&s_sd_file);
+            mp3_player_start(&s_sd_src);
+        }
+    }
+
   /* Infinite loop */
   for(;;)
   {
     mp3_player_process();
-    /* soft_stop 测试：播完后等 5s 重播可循环 */
+    /* 播完后等 5s 重播 */
     {
-        static uint8_t   s_test_state = 0; /* 0=播放中 1=已停止等待 */
+        static uint8_t   s_test_state = 0;
         static uint32_t  s_stop_tick  = 0;
 
-        if(s_test_state == 0 && !mp3_player_is_playing())
+        if (s_test_state == 0 && !mp3_player_is_playing())
         {
-            log_d("waiting start ");
             s_stop_tick  = HAL_GetTick();
             s_test_state = 1;
         }
-        else if(s_test_state == 1
-        && (HAL_GetTick() - s_stop_tick) >= 5000U)
+        else if (s_test_state == 1
+                 && (HAL_GetTick() - s_stop_tick) >= 5000U)
         {
             log_i("replay");
-            mp3_player_start(&s_flash_src);
+            mp3_player_start(&s_sd_src);
             s_test_state = 0;
         }
     }
-    // UBaseType_t ret = uxTaskGetStackHighWaterMark(NULL);
-    // log_i("defalut mark = %d",ret);
-    osDelay(10);
+    osDelay(2);
   }
   /* USER CODE END StartDefaultTask */
 }

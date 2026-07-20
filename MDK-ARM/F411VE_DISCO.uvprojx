@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -1070,6 +1070,16 @@
               <FileName>cs43lxxx_regmap.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Bsp\cs43l22\cs43lxxx_regmap.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_dwt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Bsp\dwt\bsp_dwt.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_dwt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Bsp\dwt\bsp_dwt.h</FilePath>
             </File>
           </Files>
         </Group>
