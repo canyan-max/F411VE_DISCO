@@ -56,9 +56,17 @@
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 8192 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .name       = "defaultTask",
+  .stack_size = 1024 * 4,
+  .priority   = (osPriority_t) osPriorityNormal,
+};
+
+/* Definitions for audioTask */
+osThreadId_t audioTaskHandle;
+const osThreadAttr_t audioTask_attributes = {
+  .name       = "audioTask",
+  .stack_size = 1024 * 24,
+  .priority   = (osPriority_t) osPriorityAboveNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +101,7 @@ static uint32_t sd_src_read(void    *p_ctx,
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void StartAudioTask(void *argument);
 
 extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -128,7 +137,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  audioTaskHandle = osThreadNew(StartAudioTask, NULL, &audioTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -149,7 +158,7 @@ void StartDefaultTask(void *argument)
   /* init code for USB_HOST */
 //  MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
-
+    portTASK_USES_FLOATING_POINT();
     static mp3_src_t s_sd_src;
     FRESULT          fr;
 
@@ -174,32 +183,45 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    mp3_player_process();
     /* 播完后等 5s 重播 */
-    {
-        static uint8_t   s_test_state = 0;
-        static uint32_t  s_stop_tick  = 0;
+    static uint8_t   s_test_state = 0;
+    static uint32_t  s_stop_tick  = 0;
 
-        if (s_test_state == 0 && !mp3_player_is_playing())
-        {
-            s_stop_tick  = HAL_GetTick();
-            s_test_state = 1;
-        }
-        else if (s_test_state == 1
-                 && (HAL_GetTick() - s_stop_tick) >= 5000U)
-        {
-            log_i("replay");
-            mp3_player_start(&s_sd_src);
-            s_test_state = 0;
-        }
+    if (s_test_state == 0 && !mp3_player_is_playing())
+    {
+        s_stop_tick  = HAL_GetTick();
+        s_test_state = 1;
     }
-    osDelay(2);
+    else if (s_test_state == 1
+             && (HAL_GetTick() - s_stop_tick) >= 5000U)
+    {
+        log_i("replay");
+        mp3_player_start(&s_sd_src);
+        s_test_state = 0;
+    }
+    osDelay(5);
   }
   /* USER CODE END StartDefaultTask */
 }
 
+void StartAudioTask(void *argument)
+{
+    portTASK_USES_FLOATING_POINT();
+    mp3_player_bind_task(xTaskGetCurrentTaskHandle());
+    for (;;)
+    {
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(portMAX_DELAY));
+        mp3_player_process();
+    }
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    (void)xTask;
+    log_e("STACK OVERFLOW: %s", pcTaskName);
+    for (;;);
+}
 /* USER CODE END Application */
 

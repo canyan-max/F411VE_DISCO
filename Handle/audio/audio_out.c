@@ -23,11 +23,11 @@
  * and instance name appear only in audio_out_init().                        */
 typedef struct
 {
-    cs43xxx_drv_t     *p_drv;
-    audio_out_cb_cfg_t cb;
+    cs43xxx_drv_t            *p_drv;
+    const audio_out_cb_cfg_t *p_cb;
 } audio_out_ctx_t;
 
-static audio_out_ctx_t s_ctx = {NULL, {NULL, NULL}};
+static audio_out_ctx_t s_ctx = {NULL, NULL};
 
 /* exported functions -------------------------------------------------------*/
 /**
@@ -40,13 +40,16 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
 {
     if(p_cb == NULL)
     {
+#ifdef AUDIO_DBG
+       log_e("audio_out_init input arg err");
+#endif // end of AUDIO_DBG 
         return AUDIO_OUT_ERROR;
     }
         
 
     /* Bind BSP instances — only place in this file that names them directly */
     s_ctx.p_drv = &g_cs43l22_drv;
-    s_ctx.cb    = *p_cb;
+    s_ctx.p_cb  = p_cb;
 
     cs43lxxx_status_t ret = cs43lxxx_instruct(s_ctx.p_drv,
                                                &g_cs43lxxx_hal_ops,
@@ -76,9 +79,15 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
 audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
 {
     if(p_buf == NULL || s_ctx.p_drv == NULL)
+    {
+#ifdef AUDIO_DBG
+        log_e("audio_out_start input arg err");
+#endif // end of AUDIO_DBG
         return AUDIO_OUT_ERROR;
+    }
 
-    /* 确保 DMA 和 HAL 状态为 READY，重复调用或空 DMA 均安全 */
+
+    // stop the dma 
     s_ctx.p_drv->p_hal_ops->pf_i2s_stop_dma();
 
     cs43lxxx_status_t ret = s_ctx.p_drv->pf_play(s_ctx.p_drv);
@@ -143,10 +152,9 @@ void audio_out_pause(void)
     if(s_ctx.p_drv != NULL)
     {
         s_ctx.p_drv->pf_pause(s_ctx.p_drv);
-        // s_ctx.p_drv->p_hal_ops->pf_i2s_pause_dma();
     }
-
 }
+
 /**
  * @brief            :  [audio_out_resume]
  */
@@ -155,9 +163,7 @@ void audio_out_resume(void)
     if(s_ctx.p_drv != NULL)
     {
         s_ctx.p_drv->pf_resume(s_ctx.p_drv);
-        // s_ctx.p_drv->p_hal_ops->pf_i2s_resume_dma();
     }
-
 }
 
 /**
@@ -170,6 +176,9 @@ audio_out_status_t audio_out_set_sample_rate(uint32_t hz)
 {
     if(s_ctx.p_drv == NULL || s_ctx.p_drv->p_hal_ops == NULL)
     {
+#ifdef AUDIO_DBG
+        log_e("audio_out_set_sample_rate input arg err");
+#endif // end of AUDIO_DBG
         return AUDIO_OUT_ERROR;
     }
 
@@ -186,6 +195,9 @@ audio_out_status_t audio_out_set_volume(uint8_t vol)
 {
     if(s_ctx.p_drv == NULL)
     {
+#ifdef AUDIO_DBG
+        log_e("audio_out_set_volume input arg err");
+#endif // end of AUDIO_DBG
         return AUDIO_OUT_ERROR;
     }
 
@@ -199,22 +211,20 @@ audio_out_status_t audio_out_set_volume(uint8_t vol)
  */
 void audio_out_tx_half_cplt(void)
 {
-    if(s_ctx.cb.pf_half_cplt != NULL)
+    if(s_ctx.p_cb != NULL && s_ctx.p_cb->pf_half_cplt != NULL)
     {
-        s_ctx.cb.pf_half_cplt();
+        s_ctx.p_cb->pf_half_cplt();
     }
-
 }
 
 /**
- * @brief            :  [audio_out_tx_half_cplt]
+ * @brief            :  [audio_out_tx_cplt]
  */
 void audio_out_tx_cplt(void)
 {
-    if(s_ctx.cb.pf_cplt != NULL)
+    if(s_ctx.p_cb != NULL && s_ctx.p_cb->pf_cplt != NULL)
     {
-        s_ctx.cb.pf_cplt();
+        s_ctx.p_cb->pf_cplt();
     }
-
 }
 /* end of file --------------------------------------------------------------*/

@@ -19,8 +19,10 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
-#include <stddef.h> /* stdint lib header file. */
+#include <stdint.h>   /* stdint lib header file. */
+#include <stddef.h>   /* stdint lib header file. */
+#include "FreeRTOS.h"
+#include "task.h"
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -47,6 +49,7 @@ typedef struct
 /* Register callbacks with audio_out and initialise the codec.
  * Must be called once before mp3_player_start. */
 void    mp3_player_init(void);
+void    mp3_player_bind_task(TaskHandle_t handle);
 void    mp3_player_start(const mp3_src_t *p_src);
 void    mp3_player_stop(void);
 void    mp3_player_soft_stop(void);

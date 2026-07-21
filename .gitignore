@@ -1,6 +1,6 @@
 # 编辑器/IDE 配置
 .vscode/
-
+.claude/
 # STM32CubeMX 生成文件（按你的要求忽略）
 *.mxproject
 
