@@ -150,7 +150,7 @@ static void decode_half(int16_t *p_out)
 
         if(samples <= 0)
         {
-            continue; /* non-audio frame (ID3 tag, Xing header 等), 跳过 */
+            continue; /* non-audio frame continue next frame */
         }
 
         uint32_t out_count;
@@ -302,7 +302,7 @@ void mp3_player_process(void)
 
         s_dma_running = 1;
         audio_out_start(s_dma_buf, PCM_BUF_LEN);
-        s_fill_req    = FILL_NONE;
+//        s_fill_req    = FILL_NONE;
         
 #ifdef MP3_PLARER_DBG
         log_i("start: sr=%d ch=%d rate=%d frame_bytes=%d",
