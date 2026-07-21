@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "elog.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,7 +88,14 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+    uint32_t *sp = (uint32_t *)__get_PSP();
+    uint32_t cfsr = SCB->CFSR;      // 配置错误状态寄存器（细分原因）
+    uint32_t hfsr = SCB->HFSR;      // 硬错误状态寄存器
+    uint32_t mmfar = SCB->MMFAR;    // 内存管理错误地址
+    uint32_t bfar = SCB->BFAR;      // 总线错误地址
 
+    log_e("CFSR: 0x%08X, HFSR: 0x%08X", cfsr, hfsr);
+    log_e("MMFAR: 0x%08X, BFAR: 0x%08X", mmfar, bfar);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

@@ -56,24 +56,22 @@
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name       = "defaultTask",
+  .name = "defaultTask",
   .stack_size = 1024 * 4,
-  .priority   = (osPriority_t) osPriorityNormal,
-};
-
-/* Definitions for audioTask */
-osThreadId_t audioTaskHandle;
-const osThreadAttr_t audioTask_attributes = {
-  .name       = "audioTask",
-  .stack_size = 1024 * 24,
-  .priority   = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+osThreadId_t audioTaskHandle;
+const osThreadAttr_t audioTask_attributes = {
+  .name = "audioTask",
+  .stack_size = 1024 * 24,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+
 static FATFS s_sd_fs;
 static FIL   s_sd_file;
-
 static uint32_t sd_src_read(void    *p_ctx,
                             uint32_t offset,
                             uint8_t *p_buf,
@@ -98,13 +96,36 @@ static uint32_t sd_src_read(void    *p_ctx,
     }
     return (uint32_t)br;
 }
+void StartAudioTask(void *argument);
+
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartAudioTask(void *argument);
 
 extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* Hook prototypes */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
+
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+{
+   /* Run time stack overflow checking is performed if
+   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+   called if a stack overflow is detected. */
+   configASSERT( ( pcTaskName != NULL ) && ( xTask != NULL ) );
+   log_e("STACK OVERFLOW Task: %s (TCB: 0x%p)", pcTaskName, xTask);
+    #if ( configUSE_TRACE_FACILITY == 1 )
+        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( xTask );
+        log_e("Remaining Stack (min): %d words", uxHighWaterMark);
+    #endif
+    for (;;)
+    {
+    }
+        
+}
+/* USER CODE END 4 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -156,7 +177,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_HOST */
-//  MX_USB_HOST_Init();
+  MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
     portTASK_USES_FLOATING_POINT();
     static mp3_src_t s_sd_src;
@@ -183,10 +204,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    /* 播完后等 5s 重播 */
     static uint8_t   s_test_state = 0;
     static uint32_t  s_stop_tick  = 0;
-
     if (s_test_state == 0 && !mp3_player_is_playing())
     {
         s_stop_tick  = HAL_GetTick();
@@ -199,11 +218,13 @@ void StartDefaultTask(void *argument)
         mp3_player_start(&s_sd_src);
         s_test_state = 0;
     }
-    osDelay(5);
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }
 
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
 void StartAudioTask(void *argument)
 {
     portTASK_USES_FLOATING_POINT();
@@ -215,13 +236,6 @@ void StartAudioTask(void *argument)
     }
 }
 
-/* Private application code --------------------------------------------------*/
-/* USER CODE BEGIN Application */
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
-{
-    (void)xTask;
-    log_e("STACK OVERFLOW: %s", pcTaskName);
-    for (;;);
-}
+
 /* USER CODE END Application */
 

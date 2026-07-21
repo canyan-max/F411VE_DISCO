@@ -13,21 +13,17 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
+#include <string.h>     /* string lib header file. */
 #include <stddef.h>     /* stdint lib header file. */
-#include "stm32f4xx.h"  /* __disable_irq / __enable_irq (CMSIS) */
 #include "mp3_player.h" /* mp3_player lib header file. */
-
+#include "audio_out.h"  /* audio_out lib header file. */
+#ifdef MP3_PLARER_DBG
+#include "elog.h"       /* elog lib header file. */
+#endif // end of MP3_PLARER_DBG
 // #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_ONLY_MP3     1
 #define MINIMP3_IMPLEMENTATION
-#include "minimp3.h"
-#include "audio_out.h"
-#include <string.h>
-
-#define MP3_PLARER_DBG
-#ifdef MP3_PLARER_DBG
-#include "elog.h"
-#endif // end of MP3_PLARER_DBG
+#include "minimp3.h"    /* minimp3 lib header file. */
 /* define   -----------------------------------------------------------------*/
 /* Each MPEG1 L3 frame = 1152 samples/ch; minimp3 outputs interleaved stereo,
 so MINIMP3_MAX_SAMPLES_PER_FRAME = 1152*2 = 2304 int16.
@@ -320,6 +316,7 @@ void mp3_player_process(void)
     fill_req_t req = s_fill_req;
     s_fill_req     = FILL_NONE;
     MP3_PLAYER_EXIT_CRITICAL();
+    
     int16_t *p_buff_source = NULL;
     if(req == FILL_NONE)
     {
