@@ -5,6 +5,7 @@
  *            Stable, BSP-agnostic interface between mp3_player and the
  *            codec driver.  No BSP types appear in this header.
  * @version : V1.0  2026
+ * @note    : 1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 #ifndef AUDIO_OUT_H
@@ -36,20 +37,6 @@ typedef struct
 
 /* functions ----------------------------------------------------------------*/
 /**
- * @brief            :  [audio_out_init]
- * @retval           :  [    AUDIO_OUT_OK = 0,
-                             AUDIO_OUT_ERROR,]
- * @param[in]        :  [const audio_out_cb_cfg_t *p_cb]
- */
-audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb);
-/**
- * @brief            :  [audio_out_start]
- * @retval           :  [    AUDIO_OUT_OK = 0,
-                             AUDIO_OUT_ERROR,]
- * @param[in]        :  [int16_t *p_buf, uint16_t len]
- */
-audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len);
-/**
  * @brief            :  [audio_out_stop]
  */
 void audio_out_stop(void);
@@ -69,6 +56,20 @@ void audio_out_pause(void);
  * @brief            :  [audio_out_resume]
  */
 void audio_out_resume(void);
+/**
+ * @brief            :  [audio_out_init]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [const audio_out_cb_cfg_t *p_cb]
+ */
+audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb);
+/**
+ * @brief            :  [audio_out_start]
+ * @retval           :  [    AUDIO_OUT_OK = 0,
+                             AUDIO_OUT_ERROR,]
+ * @param[in]        :  [int16_t *p_buf, uint16_t len]
+ */
+audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len);
 /**
  * @brief            :  [audio_out_set_sample_rate]
  * @retval           :  [    AUDIO_OUT_OK = 0,

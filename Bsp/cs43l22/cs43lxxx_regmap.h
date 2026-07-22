@@ -1,11 +1,8 @@
 /**
  ******************************************************************************
  *@file               :   cs43lxxx_regmap.h
- * 
  *@brief              :   Provide the HAL APIs of description.
- * 
  *@version            :   V1.0 
- * 
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
@@ -14,12 +11,11 @@
 #define CS43LXXX_REGMAP_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" 
+{
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
-#include <stddef.h>                               /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
 #define   CS43L22_REG_ID                  (0x01U)

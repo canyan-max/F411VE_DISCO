@@ -1,14 +1,9 @@
 /**
  ******************************************************************************
  *@file               :   bsp_cs43lxxx_drv.c
- *
  *@brief              :   Provide the HAL APIs of description.
- *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!  2026
- *
- *@pardependencies    :   bsp_cs43lxxx_drv.c
  ******************************************************************************
  */
 

@@ -1,25 +1,8 @@
 /**
 ********************************************************************************
-*Copyright (C) 2026-01-29 EternalChip, Inc.(Gmbh) or its affiliates.
-*All Rights Reserved.
-*
 *@file               :   bsp_dwt.h
-*
-*@pardependencies    :
-*                        bsp_dwt.h
-*                        xxx.h   
-*                        xxxx.h
-*
-*@author             :   null
-*
 *@brief              :   Provide the HAL APIs of .
-*
-*@Processingflow     :
-*
-*@calldirectly       :
-*
 *@version            :   V1.0 
-*
 *@note               :   1 tab == 4 spaces!
 ********************************************************************************
 */

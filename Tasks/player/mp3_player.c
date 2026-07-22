@@ -1,14 +1,9 @@
 /**
  ******************************************************************************
  *@file               :   mp3_player.c
- *
  *@brief              :   Provide the HAL APIs of description.
- *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!  2026
- *
- *@pardependencies    :   mp3_player.c
  ******************************************************************************
  */
 
@@ -72,7 +67,8 @@ static const audio_out_cb_cfg_t s_out_cb = {
 };
 /* private  functions  ------------------------------------------------------*/
 
-/* Append data from the source into s_in_buf until it holds at least one frame
+/**
+ * @brief            :  [refill_input]
  */
 static void refill_input(void)
 {
@@ -92,8 +88,10 @@ static void refill_input(void)
                                    to_read);
     s_in_fill += got;
 }
-
-/* Discard `bytes` from the front of s_in_buf and slide remaining data down */
+/**
+ * @brief            :  [consume_input]
+    Discard `bytes` from the front of s_in_buf and slide remaining data down
+ */
 static void consume_input(uint32_t bytes)
 {
     s_in_fill -= bytes;
@@ -104,7 +102,9 @@ static void consume_input(uint32_t bytes)
     s_offset += bytes;
 }
 
-/* Expand mono samples to interleaved stereo in-place; returns new int16 count
+/**
+ * @brief            :  [consume_input]
+    Expand mono samples to interleaved stereo in-place; returns new int16 count
  */
 static uint32_t mono_to_stereo(int16_t *p_buf, int samples)
 {
@@ -115,7 +115,10 @@ static uint32_t mono_to_stereo(int16_t *p_buf, int samples)
     }
     return (uint32_t)samples * 2U;
 }
-
+/**
+ * @brief            :  [decode_half]
+ * @param[in]        :  [int16_t *p_out]
+ */
 static void decode_half(int16_t *p_out)
 {
     memset(p_out, 0, PCM_HALF_LEN * sizeof(int16_t));
@@ -170,7 +173,10 @@ static void decode_half(int16_t *p_out)
         written += out_count;
     }
 }
-
+/**
+ * @brief            :  [mp3_isr_player_tx_half_cplt]
+It must not be blocked when used within an interrupt function.
+ */
 static void mp3_isr_player_tx_half_cplt(void)
 {
     s_fill_req = FILL_FIRST_HALF;
@@ -181,7 +187,10 @@ static void mp3_isr_player_tx_half_cplt(void)
         portYIELD_FROM_ISR(woken);
     }
 }
-
+/**
+ * @brief            :  [mp3_isr_player_tx_cplt]
+It must not be blocked when used within an interrupt function.
+ */
 static void mp3_isr_player_tx_cplt(void)
 {
     s_fill_req = FILL_SECOND_HALF;

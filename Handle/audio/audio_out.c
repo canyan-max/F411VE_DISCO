@@ -5,6 +5,7 @@
  *            All BSP-specific references are confined to this file.
  *            To swap the codec BSP, only audio_out_init() needs updating.
  * @version : V1.0  2026
+ *  @note   : 1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 
