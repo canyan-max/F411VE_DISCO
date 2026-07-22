@@ -37,6 +37,10 @@
 #include "cs43lxxx_regmap.h" /* CS43L22_REG_* constants for verify reads    */
 #include "audio_out.h"
 #include "mp3_player.h"
+
+#ifdef USER_DEBUG_LOG
+#include "SEGGER_RTT.h"
+#endif // end of USER_DEBUG_LOG
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,97 +118,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-    elog_init_handler();
-
-    mp3_player_init();
-    {
-        uint8_t           rd_val = 0;
-        cs43lxxx_status_t rd_ret = CS43LXXX_STATUS_OK;
-
-        /* Chip ID */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_ID, &rd_val, 1);
-        log_i("[verify] ID(0x%02X) ret=%d val=0x%02X mask=0x%02X",
-              CS43L22_REG_ID, rd_ret, rd_val, rd_val & CS43L22_CHIP_ID_MASK);
-
-        /* POWER_CTL1: expected 0x01 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_POWER_CTL1,
-                 &rd_val, 1);
-        log_i("[verify] POWER_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_POWER_CTL1, rd_ret, rd_val, 0x01);
-
-        /* CLOCKING_CTL: expected 0x81 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_CLOCKING_CTL,
-                 &rd_val, 1);
-        log_i("[verify] CLOCKING_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_CLOCKING_CTL, rd_ret, rd_val, 0x81);
-
-        /* INTERFACE_CTL1: expected 0x04 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_INTERFACE_CTL1,
-                 &rd_val, 1);
-        log_i("[verify] INTERFACE_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_INTERFACE_CTL1, rd_ret, rd_val, 0x04);
-
-        /* MISC_CTL: expected 0x04 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_MISC_CTL,
-                 &rd_val, 1);
-        log_i("[verify] MISC_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_MISC_CTL, rd_ret, rd_val, 0x04);
-
-        /* TONE_CTL: expected 0x0F */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_TONE_CTL,
-                 &rd_val, 1);
-        log_i("[verify] TONE_CTL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_TONE_CTL, rd_ret, rd_val, 0x0F);
-
-        /* INTERFACE_CTL2: expected 0x00 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_INTERFACE_CTL2,
-                 &rd_val, 1);
-        log_i("[verify] INTERFACE_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_INTERFACE_CTL2, rd_ret, rd_val, 0x00);
-
-        /* PASSTHR_A_SELECT: expected 0x00 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_PASSTHR_A_SELECT,
-                 &rd_val, 1);
-        log_i("[verify] PASSTHR_A(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_PASSTHR_A_SELECT, rd_ret, rd_val, 0x00);
-
-        /* PLAYBACK_CTL1: expected 0x00 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_PLAYBACK_CTL1,
-                 &rd_val, 1);
-        log_i("[verify] PLAYBACK_CTL1(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_PLAYBACK_CTL1, rd_ret, rd_val, 0x00);
-
-        /* PCMA_VOL: expected 0x00 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_PCMA_VOL,
-                 &rd_val, 1);
-        log_i("[verify] PCMA_VOL(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_PCMA_VOL, rd_ret, rd_val, 0x00);
-
-        /* CHARGE_PUMP_FREQ: expected 0x05 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_CHARGE_PUMP_FREQ,
-                 &rd_val, 1);
-        log_i("[verify] CHG_PUMP(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_CHARGE_PUMP_FREQ, rd_ret, rd_val, 0x05);
-
-        /* POWER_CTL2: expected 0x05 */
-        rd_ret = g_cs43lxxx_hal_ops.pf_i2c_read_reg(CS43XXX_I2C_ADDR_7BIT,
-                 CS43L22_REG_POWER_CTL2,
-                 &rd_val, 1);
-        log_i("[verify] POWER_CTL2(0x%02X) ret=%d val=0x%02X expect=0x%02X",
-              CS43L22_REG_POWER_CTL2, rd_ret, rd_val, 0x05);
-
-    }
+#ifdef USER_DEBUG_LOG
+  elog_init_handler();
+#endif // end of USER_DEBUG_LOG 
 
   /* USER CODE END 2 */
 
@@ -221,12 +137,12 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-    while(1)
-    {
+  while(1)
+  {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    }
+  }
 
   /* USER CODE END 3 */
 }
@@ -299,6 +215,7 @@ void PeriphCommonClock_Config(void)
 /* USER CODE BEGIN 4 */
 static void elog_init_handler(void)
 {
+    SEGGER_RTT_Init();      
     elog_init();
     elog_set_text_color_enabled(true);
     elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
@@ -338,6 +255,7 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
     if(hi2s == &hi2s3)
     {
         uint32_t err = HAL_I2S_GetError(hi2s);
+        (void)err;
         // log_i("[i2s] ErrorCallback: err=0x%08lX", err);
     }
 }

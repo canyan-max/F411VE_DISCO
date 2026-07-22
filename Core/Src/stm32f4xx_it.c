@@ -89,7 +89,9 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+#ifdef USER_DEBUG_LOG
     uint32_t *sp = (uint32_t *)__get_PSP();
+    (void)sp;
     uint32_t cfsr = SCB->CFSR;      // 配置错误状态寄存器（细分原因）
     uint32_t hfsr = SCB->HFSR;      // 硬错误状态寄存器
     uint32_t mmfar = SCB->MMFAR;    // 内存管理错误地址
@@ -97,6 +99,7 @@ void HardFault_Handler(void)
 
     log_e("CFSR: 0x%08X, HFSR: 0x%08X", cfsr, hfsr);
     log_e("MMFAR: 0x%08X, BFAR: 0x%08X", mmfar, bfar);
+#endif //     USER_DEBUG_LOG
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

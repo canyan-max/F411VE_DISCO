@@ -14,11 +14,10 @@
 #include "cs43lxxx_hal.h"     /* g_cs43lxxx_hal_ops, g_cs43l22_drv          */
 #include "bsp_cs43lxxx_drv.h" /* cs43lxxx_instruct, CS43XXX_I2C_ADDR_7BIT   */
 
-#define AUDIO_DBG
-#ifdef  AUDIO_DBG
-#define AOUT_TAG "aout"
+
+#ifdef  USER_DEBUG_LOG
 #include "elog.h"
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
 
 /* Internal context — every function goes through s_ctx, so the BSP type
  * and instance name appear only in audio_out_init().                        */
@@ -41,9 +40,9 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
 {
     if(p_cb == NULL)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
        log_e("audio_out_init input arg err");
-#endif // end of AUDIO_DBG 
+#endif // end of USER_DEBUG_LOG 
         return AUDIO_OUT_ERROR;
     }
         
@@ -58,15 +57,15 @@ audio_out_status_t audio_out_init(const audio_out_cb_cfg_t *p_cb)
                                                OUTPUT_DEVICE_AUTO);
     if(ret != CS43LXXX_STATUS_OK)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
        log_e("instruct failed ret=%d", ret);
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
 
         return AUDIO_OUT_ERROR;
     }
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
     log_i("init ok is_init=%d", s_ctx.p_drv->is_init);
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
 
     return AUDIO_OUT_OK;
 }
@@ -81,9 +80,9 @@ audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
 {
     if(p_buf == NULL || s_ctx.p_drv == NULL)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
         log_e("audio_out_start input arg err");
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
         return AUDIO_OUT_ERROR;
     }
 
@@ -94,18 +93,18 @@ audio_out_status_t audio_out_start(int16_t *p_buf, uint16_t len)
     cs43lxxx_status_t ret = s_ctx.p_drv->pf_play(s_ctx.p_drv);
     if(ret != CS43LXXX_STATUS_OK)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
         log_e("pf_play failed ret=%d", ret);
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
         return AUDIO_OUT_ERROR;
     }
 
     ret = s_ctx.p_drv->p_hal_ops->pf_i2s_transmit_with_dma((uint16_t *)p_buf, len);
     if(ret != CS43LXXX_STATUS_OK)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
         log_e("i2s transmit failed ret=%d", ret);
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
         return AUDIO_OUT_ERROR;
     }
 
@@ -177,9 +176,9 @@ audio_out_status_t audio_out_set_sample_rate(uint32_t hz)
 {
     if(s_ctx.p_drv == NULL || s_ctx.p_drv->p_hal_ops == NULL)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
         log_e("audio_out_set_sample_rate input arg err");
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
         return AUDIO_OUT_ERROR;
     }
 
@@ -196,9 +195,9 @@ audio_out_status_t audio_out_set_volume(uint8_t vol)
 {
     if(s_ctx.p_drv == NULL)
     {
-#ifdef AUDIO_DBG
+#ifdef USER_DEBUG_LOG
         log_e("audio_out_set_volume input arg err");
-#endif // end of AUDIO_DBG
+#endif // end of USER_DEBUG_LOG
         return AUDIO_OUT_ERROR;
     }
 

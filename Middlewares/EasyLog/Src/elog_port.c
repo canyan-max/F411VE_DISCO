@@ -30,6 +30,7 @@
 /*user include */
 #include "arm_compat.h"
 #include <stdio.h>
+#include "SEGGER_RTT.h"
 /**
  * EasyLogger port initialize
  *
@@ -62,7 +63,8 @@ void elog_port_deinit(void) {
 void elog_port_output(const char *log, size_t size) {
     
     /* add your code here */
-    printf("%.*s", size, log);
+    SEGGER_RTT_Write(0,log,size);
+//    printf("%.*s", size, log);
 }
 
 /**

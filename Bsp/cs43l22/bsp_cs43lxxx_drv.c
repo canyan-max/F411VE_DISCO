@@ -66,7 +66,7 @@ static cs43lxxx_status_t cs43lxxx_read_id(cs43xxx_drv_t *p_drv, uint8_t *p_id)
     {
         return CS43LXXX_STATUS_ERR_SRC;
     }
-    uint8_t           id  = 0x00;
+    uint8_t           id  = 0x00U;
     cs43lxxx_status_t ret = CS43LXXX_STATUS_OK;
     ret                   = CS43LXXX_READ_REG(p_drv, CS43L22_REG_ID, &id, 1);
     if(CS43LXXX_STATUS_OK != ret)
@@ -76,7 +76,7 @@ static cs43lxxx_status_t cs43lxxx_read_id(cs43xxx_drv_t *p_drv, uint8_t *p_id)
     id = (id & CS43L22_CHIP_ID_MASK);
     if(CS43L22_CHIP_ID != id)
     {
-        *p_id = 0xa5;
+        *p_id = 0xA5U;
         return CS43LXXX_STATUS_ERROR;
     }
     *p_id = id;
@@ -201,22 +201,7 @@ static cs43lxxx_status_t cs43lxxx_set_out(cs43xxx_drv_t *p_drv)
     }
 
     /* Restore device-dependent POWER_CTL2 (per ST BSP SetMute OFF). */
-    switch(p_drv->out_put)
-    {
-        case OUTPUT_DEVICE_SPEAKER:
-            temp_reg = 0xFA;
-            break;
-        case OUTPUT_DEVICE_HEADPHONE:
-            temp_reg = 0xAF;
-            break;
-        case OUTPUT_DEVICE_BOTH:
-            temp_reg = 0xAA;
-            break;
-        case OUTPUT_DEVICE_AUTO:
-        default:
-            temp_reg = 0x05;
-            break;
-    }
+    temp_reg = cs43lxxx_choose_mode(p_drv->out_put);
     ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL2, &temp_reg, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
@@ -436,38 +421,21 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
     p_drv->p_hal_ops->pf_power_control(1);
     p_drv->p_hal_ops->pf_delay_ms(10);
     // step 1
-    reg_value = 0x01;
+    reg_value = 0x01U;
     ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL1, &reg_value, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
         return ret;
     }
     // step 2: Device-dependent power config (per ST BSP)
-    switch(p_drv->out_put)
-    {
-        case OUTPUT_DEVICE_SPEAKER:
-            reg_value = 0xFA; /* SPK always ON, HP always OFF */
-            break;
-        case OUTPUT_DEVICE_HEADPHONE:
-            reg_value = 0xAF; /* SPK always OFF, HP always ON */
-            break;
-        case OUTPUT_DEVICE_BOTH:
-            reg_value = 0xAA; /* SPK always ON, HP always ON */
-            break;
-        case OUTPUT_DEVICE_AUTO:
-            reg_value = 0x05; /* Auto-detect HP or SPK */
-            break;
-        default:
-            reg_value = 0x05; /* Auto-detect HP or SPK */
-            break;
-    }
+    reg_value = cs43lxxx_choose_mode(p_drv->out_put);
     ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_POWER_CTL2, &reg_value, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
         return ret;
     }
     // step 3: Auto speed detection, External MCLK (per ST BSP)
-    reg_value = 0x81;
+    reg_value =0x80;// 0x80;//0x81;
     ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_CLOCKING_CTL, &reg_value, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
@@ -475,6 +443,7 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
     }
     // step 4
     reg_value = 0x04;
+//    reg_value = 0x07;
     ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_INTERFACE_CTL1, &reg_value, 1);
     if(CS43LXXX_STATUS_OK != ret)
     {
@@ -549,6 +518,16 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
             return ret;
         }
     }
+    else 
+    {
+//        reg_value = 0x00;
+//        ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_PLAYBACK_CTL1, &reg_value,
+//        1); 
+//        if(CS43LXXX_STATUS_OK != ret)
+//        {
+//            return ret;
+//        }
+    }
 
     // step 8
     reg_value = 0x00U;
@@ -592,14 +571,13 @@ static cs43lxxx_status_t cs43lxxx_init(cs43xxx_drv_t *p_drv, uint8_t volume)
         return ret;
     }
     // step 13: Enable charge pump (required for headphone output)
-    //    reg_value = 0x05U;
-    //    ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_CHARGE_PUMP_FREQ,
-    //    &reg_value,
-    //                             1);
-    //    if(CS43LXXX_STATUS_OK != ret)
-    //    {
-    //        return ret;
-    //    }
+    reg_value = 0x05U;
+    ret = CS43LXXX_WRITE_REG(p_drv, CS43L22_REG_CHARGE_PUMP_FREQ,
+    &reg_value, 1);
+    if(CS43LXXX_STATUS_OK != ret)
+    {
+        return ret;
+    }
     return CS43LXXX_STATUS_OK;
 }
 /* exported functions -------------------------------------------------------*/

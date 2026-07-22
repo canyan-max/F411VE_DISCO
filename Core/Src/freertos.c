@@ -27,11 +27,14 @@
 /* USER CODE BEGIN Includes */
 #include "cs43lxxx_hal.h"    /* g_cs43lxxx_hal_ops, g_cs43l22_drv          */
 #include "cs43lxxx_regmap.h" /* CS43L22_REG_* constants for verify reads    */
-#include "audio_out.h"
+#include "media_src.h"
 #include "mp3_player.h"
-#include <string.h>
+#include "sd_manager.h"
+#include "audio_task.h"
+
+#ifdef USER_DEBUG_LOG
 #include "elog.h"
-#include "fatfs.h"
+#endif // USER_DEBUG_LOG
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,40 +66,6 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-osThreadId_t audioTaskHandle;
-const osThreadAttr_t audioTask_attributes = {
-  .name = "audioTask",
-  .stack_size = 1024 * 24,
-  .priority = (osPriority_t) osPriorityAboveNormal,
-};
-
-static FATFS s_sd_fs;
-static FIL   s_sd_file;
-static uint32_t sd_src_read(void    *p_ctx,
-                            uint32_t offset,
-                            uint8_t *p_buf,
-                            uint32_t len)
-{
-    FIL    *p_file = (FIL *)p_ctx;
-    UINT    br;
-    FRESULT fr;
-
-    if (f_tell(p_file) != (FSIZE_t)offset)
-    {
-        fr = f_lseek(p_file, (FSIZE_t)offset);
-        if (fr != FR_OK)
-        {
-            return 0U;
-        }
-    }
-    fr = f_read(p_file, p_buf, (UINT)len, &br);
-    if (fr != FR_OK)
-    {
-        return 0U;
-    }
-    return (uint32_t)br;
-}
-void StartAudioTask(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -106,7 +75,36 @@ extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* Hook prototypes */
+void vApplicationIdleHook(void);
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
+
+/* USER CODE BEGIN 2 */
+#ifdef USER_DEBUG_LOG
+char pcWriteBuffer[512];
+#endif 
+void vApplicationIdleHook( void )
+{
+   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+   to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
+   task. It is essential that code added to this hook function never attempts
+   to block in any way (for example, call xQueueReceive() with a block time
+   specified, or call vTaskDelay()). If the application makes use of the
+   vTaskDelete() API function (as this demo application does) then it is also
+   important that vApplicationIdleHook() is permitted to return to its calling
+   function, because it is the responsibility of the idle task to clean up
+   memory allocated by the kernel to any task that has since been deleted. */
+#ifdef USER_DEBUG_LOG
+    static uint32_t ulIdleCount = 0;
+    ulIdleCount++;
+
+    if( ( ulIdleCount % 10000000 ) == 0 ) {
+
+        vTaskList(pcWriteBuffer);
+        log_i("Task Info:\n%s\n", pcWriteBuffer);
+    }
+#endif // USER_DEBUG_LOG
+}
+/* USER CODE END 2 */
 
 /* USER CODE BEGIN 4 */
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
@@ -115,10 +113,18 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
    configASSERT( ( pcTaskName != NULL ) && ( xTask != NULL ) );
+#ifdef USER_DEBUG_LOG
    log_e("STACK OVERFLOW Task: %s (TCB: 0x%p)", pcTaskName, xTask);
+#endif // USER_DEBUG_LOG
+
     #if ( configUSE_TRACE_FACILITY == 1 )
+    {
+#ifdef USER_DEBUG_LOG
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( xTask );
         log_e("Remaining Stack (min): %d words", uxHighWaterMark);
+#endif // USER_DEBUG_LOG
+    }
+
     #endif
     for (;;)
     {
@@ -134,7 +140,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  audio_task_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -158,7 +164,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  audioTaskHandle = osThreadNew(StartAudioTask, NULL, &audioTask_attributes);
+  audio_task_create();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -179,33 +185,42 @@ void StartDefaultTask(void *argument)
   /* init code for USB_HOST */
   MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
-    portTASK_USES_FLOATING_POINT();
-    static mp3_src_t s_sd_src;
-    FRESULT          fr;
-
-    fr = f_mount(&s_sd_fs, USERPath, 1);
-    log_i("[player] f_mount=%d", (int)fr);
-
-    if (fr == FR_OK)
+    static media_src_t s_src;
+    (void)argument;
+    
+    if (sd_manager_mount() == SD_OK)
     {
-        fr = f_open(&s_sd_file, "0:/SSFF.MP3", FA_READ);
-        log_i("[player] f_open=%d size=%lu",
-              (int)fr, (unsigned long)f_size(&s_sd_file));
-
-        if (fr == FR_OK)
+#ifdef USER_DEBUG_LOG
+        log_i("[sd] mount ok");
+#endif // USER_DEBUG_LOG
+        if (sd_manager_open("0:/SSFF.MP3") == SD_OK)
         {
-            s_sd_src.pf_read    = sd_src_read;
-            s_sd_src.p_ctx      = &s_sd_file;
-            s_sd_src.total_size = (uint32_t)f_size(&s_sd_file);
-            mp3_player_start(&s_sd_src);
+            sd_manager_get_src(&s_src);
+            mp3_player_start(&s_src);
+            audio_task_signal();
         }
+        else
+        {
+#ifdef USER_DEBUG_LOG
+        log_e("[sd] open failed");
+#endif // USER_DEBUG_LOG
+
+        }
+    }
+    else
+    {
+#ifdef USER_DEBUG_LOG
+        log_e("[sd] mount failed");
+#endif // USER_DEBUG_LOG
+
     }
 
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
-    static uint8_t   s_test_state = 0;
-    static uint32_t  s_stop_tick  = 0;
+    static uint8_t  s_test_state = 0;
+    static uint32_t s_stop_tick  = 0;
+
     if (s_test_state == 0 && !mp3_player_is_playing())
     {
         s_stop_tick  = HAL_GetTick();
@@ -214,8 +229,16 @@ void StartDefaultTask(void *argument)
     else if (s_test_state == 1
              && (HAL_GetTick() - s_stop_tick) >= 5000U)
     {
+#ifdef USER_DEBUG_LOG
         log_i("replay");
-        mp3_player_start(&s_sd_src);
+#endif // end of USER_DEBUG_LOG
+        sd_manager_close();
+        if (sd_manager_open("0:/SSFF.MP3") == SD_OK)
+        {
+            sd_manager_get_src(&s_src);
+            mp3_player_start(&s_src);
+            audio_task_signal();
+        }
         s_test_state = 0;
     }
     osDelay(1000);
@@ -225,17 +248,6 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void StartAudioTask(void *argument)
-{
-    portTASK_USES_FLOATING_POINT();
-    mp3_player_bind_task(xTaskGetCurrentTaskHandle());
-    for (;;)
-    {
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(portMAX_DELAY));
-        mp3_player_process();
-    }
-}
-
 
 /* USER CODE END Application */
 
