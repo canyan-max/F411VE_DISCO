@@ -33,14 +33,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "elog.h"
-#include "cs43lxxx_hal.h"    /* g_cs43lxxx_hal_ops, g_cs43l22_drv           */
-#include "cs43lxxx_regmap.h" /* CS43L22_REG_* constants for verify reads    */
-#include "audio_out.h"
-#include "mp3_player.h"
-
-#ifdef USER_DEBUG_LOG
+#ifdef USE_JLINK_RTT    
 #include "SEGGER_RTT.h"
-#endif // end of USER_DEBUG_LOG
+#endif 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,9 +68,9 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static void elog_init_handler(void);
-
-
+#ifdef USER_DEBUG_LOG
+static void elog_init_config(void);
+#endif // USER_DEBUG_LOG
 /* USER CODE END 0 */
 
 /**
@@ -119,7 +114,7 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 #ifdef USER_DEBUG_LOG
-  elog_init_handler();
+  elog_init_config();
 #endif // end of USER_DEBUG_LOG 
 
   /* USER CODE END 2 */
@@ -213,9 +208,9 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void elog_init_handler(void)
+#ifdef USER_DEBUG_LOG
+static void elog_init_config(void)
 {
-    SEGGER_RTT_Init();      
     elog_init();
     elog_set_text_color_enabled(true);
     elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
@@ -228,8 +223,9 @@ static void elog_init_handler(void)
     elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL);
     elog_start();
 }
-
+#endif // USER_DEBUG_LOG
 /* I2S DMA TX complete callback */
+extern void audio_out_tx_cplt(void);
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
     if(hi2s == &hi2s3)
@@ -240,6 +236,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 }
 
 /* I2S DMA TX half-complete callback */
+extern void audio_out_tx_half_cplt(void);
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
     if(hi2s == &hi2s3)

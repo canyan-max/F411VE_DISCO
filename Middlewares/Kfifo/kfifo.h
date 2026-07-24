@@ -53,6 +53,21 @@ uint32_t kfifo_put(kfifo_t *fifo, const uint8_t *data, uint32_t len);
  * @param[in]        :  [kfifo_t* fifo,uint8_t* data,uint32_t len]
  */
 uint32_t kfifo_get(kfifo_t *fifo, uint8_t *data, uint32_t len);
+
+/**
+ * @brief            :  [kfifo_advance_in]
+ * @retval           :  [number of bytes read]
+ * @param[in]        :  [kfifo_t *fifo, uint32_t len)]
+ */
+uint8_t kfifo_advance_in(kfifo_t *fifo, uint32_t len);
+
+/**
+ * @brief            :  [kfifo_get_buffer_size]
+ * @retval           :  [0 successful]
+ * @param[in]        :  [kfifo_t *fifo uint32_t *buffer_size]
+ */
+uint8_t kfifo_get_buffer_size(kfifo_t *fifo , uint32_t *buffer_size);
+
 /**
  * @brief            :  [kfifo_len]
  * @retval           :  [number of bytes in the fifo]
@@ -62,6 +77,7 @@ static inline uint32_t kfifo_len(const kfifo_t *fifo)
 {
     return fifo->in - fifo->out;
 }
+
 /**
  * @brief            :  [kfifo_avail]
  * @retval           :  [number of bytes available in the fifo]
@@ -71,6 +87,7 @@ static inline uint32_t kfifo_avail(const kfifo_t *fifo)
 {
     return fifo->size - kfifo_len(fifo);
 }
+
 /**
  * @brief            :  [kfifo_contig_write_space]
  * @retval           :  [number of bytes available for writing]
@@ -80,6 +97,7 @@ static inline uint32_t kfifo_contig_write_space(const kfifo_t *fifo)
 {
     return fifo->size - (fifo->in & (fifo->size - 1));
 }
+
 /**
  * @brief            :  [kfifo_contig_read_data]
  * @retval           :  [number of bytes available for reading]

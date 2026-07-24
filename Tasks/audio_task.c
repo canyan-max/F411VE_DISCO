@@ -23,12 +23,12 @@
 static void StartAudioTask(void *argument);
 
 /* private variables --------------------------------------------------------*/
-static TaskHandle_t s_handle = NULL;
+static TaskHandle_t audio_handle = NULL;
 
 static const osThreadAttr_t s_attr = {
     .name       = "audioTask",
     .stack_size = 1024 * 24,
-    .priority   = (osPriority_t)osPriorityAboveNormal,
+    .priority   = (osPriority_t)osPriorityNormal1,
 };
 
 /* private functions --------------------------------------------------------*/
@@ -36,7 +36,7 @@ static void on_half_cplt(void)
 {
     mp3_player_on_half_cplt();
     BaseType_t woken = pdFALSE;
-    vTaskNotifyGiveFromISR(s_handle, &woken);
+    vTaskNotifyGiveFromISR(audio_handle, &woken);
     portYIELD_FROM_ISR(woken);
 }
 
@@ -44,7 +44,7 @@ static void on_cplt(void)
 {
     mp3_player_on_cplt();
     BaseType_t woken = pdFALSE;
-    vTaskNotifyGiveFromISR(s_handle, &woken);
+    vTaskNotifyGiveFromISR(audio_handle, &woken);
     portYIELD_FROM_ISR(woken);
 }
 
@@ -75,7 +75,7 @@ static void StartAudioTask(void *argument)
 {
     (void)argument;
     portTASK_USES_FLOATING_POINT();
-    s_handle = xTaskGetCurrentTaskHandle();
+    audio_handle = xTaskGetCurrentTaskHandle();
     for (;;)
     {
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
@@ -87,9 +87,9 @@ static void StartAudioTask(void *argument)
 
 void audio_task_signal(void)
 {
-    if (s_handle != NULL)
+    if (audio_handle != NULL)
     {
-        xTaskNotifyGive(s_handle);
+        xTaskNotifyGive(audio_handle);
     }
 }
 

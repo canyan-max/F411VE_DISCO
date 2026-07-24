@@ -30,7 +30,10 @@
 /*user include */
 #include "arm_compat.h"
 #include <stdio.h>
+#ifdef USE_JLINK_RTT    
 #include "SEGGER_RTT.h"
+#endif 
+
 /**
  * EasyLogger port initialize
  *
@@ -38,7 +41,9 @@
  */
 ElogErrCode elog_port_init(void) {
     ElogErrCode result = ELOG_NO_ERR;
-
+#ifdef USE_JLINK_RTT    
+    SEGGER_RTT_Init();  
+#endif // end of USE_JLINK_RTT
     /* add your code here */
     
     return result;
@@ -63,8 +68,12 @@ void elog_port_deinit(void) {
 void elog_port_output(const char *log, size_t size) {
     
     /* add your code here */
+#ifdef USE_JLINK_RTT    
     SEGGER_RTT_Write(0,log,size);
-//    printf("%.*s", size, log);
+#else 
+    printf("%.*s", size, log);
+#endif // end of USE_JLINK_RTT
+
 }
 
 /**

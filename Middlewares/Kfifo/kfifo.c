@@ -101,4 +101,60 @@ uint32_t kfifo_get(kfifo_t *fifo, uint8_t *data, uint32_t len)
     return len;
 }
 
+/**
+ * @brief            :  [kfifo_peek]
+ * @retval           :  [peek fifo data only head]
+ * @param[in]        :  [kfifo_t* fifo,uint8_t* data]
+ */
+uint8_t kfifo_peek_out(kfifo_t *fifo, uint8_t *data)
+{
+    uint8_t offset = 0x00;
+    if(NULL == fifo || NULL == data)
+    {
+        return 1U;
+    }
+    if(fifo->in == fifo->out)
+    {
+        return 2U;
+    }
+    offset = fifo->out &(fifo->size - 1);
+    *data = offset ;
+    return 0U;
+}
+
+
+/**
+ * @brief            :  [kfifo_advance_in]
+ * @retval           :  [0 is successful]
+ * @param[in]        :  [kfifo_t *fifo, uint32_t len)]
+ */
+uint8_t kfifo_advance_in(kfifo_t *fifo, uint32_t len)
+{
+
+    if(NULL == fifo || 0 == len)
+    {
+        return 1U;
+    }
+
+    fifo->in += len;
+    return 0U;
+}
+
+/**
+ * @brief            :  [kfifo_get_buffer_size]
+ * @retval           :  [0 successful]
+ * @param[in]        :  [kfifo_t *fifo uint32_t *buffer_size]
+ */
+uint8_t kfifo_get_buffer_size(kfifo_t *fifo , uint32_t *buffer_size)
+{
+
+    if(NULL == fifo)
+    {
+        return 1U;
+    }
+    *buffer_size=fifo->size;
+    return 0U;
+}
+
+
 /* end of  file -------------------------------------------------------------*/
