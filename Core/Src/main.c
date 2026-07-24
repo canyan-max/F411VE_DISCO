@@ -112,6 +112,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_FATFS_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 #ifdef USER_DEBUG_LOG
   elog_init_config();
@@ -224,6 +225,7 @@ static void elog_init_config(void)
     elog_start();
 }
 #endif // USER_DEBUG_LOG
+
 /* I2S DMA TX complete callback */
 extern void audio_out_tx_cplt(void);
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
