@@ -32,6 +32,8 @@
 #include <stdio.h>
 #ifdef USE_JLINK_RTT    
 #include "SEGGER_RTT.h"
+#else 
+#include "usart.h"
 #endif 
 
 /**
@@ -45,7 +47,15 @@ ElogErrCode elog_port_init(void) {
     SEGGER_RTT_Init();  
 #endif // end of USE_JLINK_RTT
     /* add your code here */
-    
+    elog_set_text_color_enabled(true);
+    elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
+    elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_DEBUG,
+    ELOG_FMT_ALL &
+    ~(ELOG_FMT_P_INFO | ELOG_FMT_T_INFO | ELOG_FMT_TIME));
+    elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL);
     return result;
 }
 
@@ -71,7 +81,7 @@ void elog_port_output(const char *log, size_t size) {
 #ifdef USE_JLINK_RTT    
     SEGGER_RTT_Write(0,log,size);
 #else 
-    printf("%.*s", size, log);
+    HAL_UART_Transmit(&huart1, (uint8_t*)log, size, HAL_MAX_DELAY);
 #endif // end of USE_JLINK_RTT
 
 }

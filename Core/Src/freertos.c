@@ -124,10 +124,10 @@ static uint8_t find_next_mp3(const FILINFO *p_files, uint8_t count,
             continue;
         }
         const char *ext = p_files[idx].fname + len - 4;
-        if (ext[0] == '.' &&
+        if(  ext[0] == '.' &&
             (ext[1] == 'M' || ext[1] == 'm') &&
             (ext[2] == 'P' || ext[2] == 'p') &&
-            ext[3] == '3')
+             ext[3] == '3')
         {
             return idx;
         }
