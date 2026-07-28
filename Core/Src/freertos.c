@@ -32,6 +32,7 @@
 #include "sd_manager.h"
 #include "fatfs.h"
 #include "audio_task.h"
+#include "uart_task.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
 #endif // USER_DEBUG_LOG
@@ -65,7 +66,6 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -168,6 +168,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
     audio_task_init();
+    uart_task_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -192,6 +193,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
     audio_task_create();
+    uart_task_create();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

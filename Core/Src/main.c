@@ -224,7 +224,6 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
     if(hi2s == &hi2s3)
     {
         audio_out_tx_cplt();
-//        log_i("[i2s] TxfinshCallback");
     }
 }
 
@@ -235,7 +234,6 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
     if(hi2s == &hi2s3)
     {
         audio_out_tx_half_cplt();
-//        log_i("[i2s] TxHalfCallback");
     }
 }
 
@@ -245,8 +243,7 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
     if(hi2s == &hi2s3)
     {
         uint32_t err = HAL_I2S_GetError(hi2s);
-        (void)err;
-        // log_i("[i2s] ErrorCallback: err=0x%08lX", err);
+        ((void)err);
     }
 }
 /* USER CODE END 4 */

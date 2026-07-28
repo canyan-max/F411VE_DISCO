@@ -157,4 +157,19 @@ uint8_t kfifo_get_buffer_size(kfifo_t *fifo , uint32_t *buffer_size)
 }
 
 
+/**
+ * @brief            :  [kfifo_advance_out]
+ * @retval           :  [0 is successful]
+ * @param[in]        :  [kfifo_t *fifo, uint32_t len]
+ */
+uint8_t kfifo_advance_out(kfifo_t *fifo, uint32_t len)
+{
+    if (NULL == fifo || 0 == len)
+    {
+        return 1U;
+    }
+    fifo->out += len;
+    return 0U;
+}
+
 /* end of  file -------------------------------------------------------------*/

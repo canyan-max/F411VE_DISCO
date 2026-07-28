@@ -107,4 +107,12 @@ static inline uint32_t kfifo_contig_read_data(const kfifo_t *fifo)
 {
     return fifo->size - (fifo->out & (fifo->size - 1));
 }
+
+/**
+ * @brief            :  [kfifo_advance_out]
+ * @retval           :  [0 is successful]
+ * @param[in]        :  [kfifo_t *fifo, uint32_t len]
+ */
+uint8_t kfifo_advance_out(kfifo_t *fifo, uint32_t len);
+
 #endif /* KFIFO_H */
