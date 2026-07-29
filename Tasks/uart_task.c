@@ -13,7 +13,6 @@
 #include "cmsis_os.h"
 #include "uart_task.h"
 #include "uart_manager.h"
-#include "uart_hal.h"
 
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
@@ -57,10 +56,10 @@ static void StartUartTask(void *argument)
 }
 
 /* exported functions -------------------------------------------------------*/
-void uart_task_init(void)
+void uart_task_init(uart_hal_ops_t *p_ops)
 {
     s_sem = osSemaphoreNew(1U, 0U, NULL);
-    uart_manager_setup(&s_uart2_mgr, &g_uart2_hal_ops, uart2_notify, s_sem);
+    uart_manager_setup(&s_uart2_mgr, p_ops, uart2_notify, s_sem);
 }
 
 void uart_task_create(void)

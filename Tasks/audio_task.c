@@ -56,7 +56,6 @@ static const audio_out_cb_cfg_t s_audio_cb = {
 /* exported functions -------------------------------------------------------*/
 void audio_task_create(void)
 {
-
     osThreadNew(StartAudioTask, NULL, &s_attr);
 }
 

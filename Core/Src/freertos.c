@@ -33,6 +33,7 @@
 #include "fatfs.h"
 #include "audio_task.h"
 #include "uart_task.h"
+#include "uart_hal.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
 #endif // USER_DEBUG_LOG
@@ -168,7 +169,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
     audio_task_init();
-    uart_task_init();
+    uart_task_init(&g_uart2_hal_ops);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
