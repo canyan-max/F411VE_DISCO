@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
- *@file    :   audio_task.c
- *@brief   :   audioTask — waits for DMA notifications, drives mp3_player.
- *             All RTOS/ISR wiring for audio playback lives here.
+ *@file    :   decode_task.c
+ *@brief   :   decodeTask — waits for DMA half/cplt notifications, drives
+ *             mp3_player decode loop. No SD or playback control here.
  *@version :   V1.0
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
@@ -14,29 +14,28 @@
 #include "cmsis_os.h"
 #include "audio_out.h"
 #include "mp3_player.h"
-#include "audio_task.h"
+#include "decode_task.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
-#endif // end of USER_DEBUG_LOG
+#endif
 
 /* private function prototypes ----------------------------------------------*/
-static void StartAudioTask(void *argument);
+static void StartDecodeTask(void *argument);
 
 /* private variables --------------------------------------------------------*/
-static TaskHandle_t audio_handle = NULL;
+static TaskHandle_t s_decode_handle = NULL;
 
 static const osThreadAttr_t s_attr = {
-    .name       = "audioTask",
-    .stack_size = 1024 * 24,
+    .name       = "decodeTask",
+    .stack_size = 1024U * 24U,
     .priority   = (osPriority_t)osPriorityNormal1,
 };
 
-/* private functions --------------------------------------------------------*/
 static void on_half_cplt(void)
 {
     mp3_player_on_half_cplt();
     BaseType_t woken = pdFALSE;
-    vTaskNotifyGiveFromISR(audio_handle, &woken);
+    vTaskNotifyGiveFromISR(s_decode_handle, &woken);
     portYIELD_FROM_ISR(woken);
 }
 
@@ -44,7 +43,7 @@ static void on_cplt(void)
 {
     mp3_player_on_cplt();
     BaseType_t woken = pdFALSE;
-    vTaskNotifyGiveFromISR(audio_handle, &woken);
+    vTaskNotifyGiveFromISR(s_decode_handle, &woken);
     portYIELD_FROM_ISR(woken);
 }
 
@@ -54,41 +53,41 @@ static const audio_out_cb_cfg_t s_audio_cb = {
 };
 
 /* exported functions -------------------------------------------------------*/
-void audio_task_create(void)
+void decode_task_init(void)
 {
-    osThreadNew(StartAudioTask, NULL, &s_attr);
-}
-
-void audio_task_init(void)
-{
-    if (audio_out_init(&s_audio_cb) != AUDIO_OUT_OK)
+    if (audio_out_init(&s_audio_cb) != PLATFORM_ERR_OK)
     {
 #ifdef USER_DEBUG_LOG
-        log_i("audio init err");
-#endif // end of USER_DEBUG_LOG
-
-        while(1);
+        log_e("audio_out init failed");
+#endif
+        while (1);
     }
 }
-static void StartAudioTask(void *argument)
+
+void decode_task_create(void)
+{
+    osThreadNew(StartDecodeTask, NULL, &s_attr);
+}
+
+void decode_task_signal(void)
+{
+    if (s_decode_handle != NULL)
+    {
+        xTaskNotifyGive(s_decode_handle);
+    }
+}
+
+static void StartDecodeTask(void *argument)
 {
     (void)argument;
     portTASK_USES_FLOATING_POINT();
-    audio_handle = xTaskGetCurrentTaskHandle();
+    s_decode_handle = xTaskGetCurrentTaskHandle();
     for (;;)
     {
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
         {
             mp3_player_process();
         }
-    }
-}
-
-void audio_task_signal(void)
-{
-    if (audio_handle != NULL)
-    {
-        xTaskNotifyGive(audio_handle);
     }
 }
 

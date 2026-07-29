@@ -25,15 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
-#include <stdio.h>
-#include "media_src.h"
-#include "mp3_player.h"
-#include "sd_manager.h"
-#include "fatfs.h"
-#include "audio_task.h"
-#include "uart_task.h"
-#include "uart_hal.h"
+#include "app_boot.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
 #endif // USER_DEBUG_LOG
@@ -109,33 +101,6 @@ void vApplicationIdleHook(void)
 /* USER CODE END 2 */
 
 /* USER CODE BEGIN 4 */
-static uint8_t find_next_mp3(const FILINFO *p_files, uint8_t count,
-                              uint8_t start)
-{
-    if (count == 0)
-    {
-        return 0xFF;
-    }
-    for (uint8_t i = 0; i < count; i++)
-    {
-        uint8_t     idx = (uint8_t)((start + i) % count);
-        size_t      len = strlen(p_files[idx].fname);
-        if (len < 4)
-        {
-            continue;
-        }
-        const char *ext = p_files[idx].fname + len - 4;
-        if(  ext[0] == '.' &&
-            (ext[1] == 'M' || ext[1] == 'm') &&
-            (ext[2] == 'P' || ext[2] == 'p') &&
-             ext[3] == '3')
-        {
-            return idx;
-        }
-    }
-    return 0xFF;
-}
-
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
     /* Run time stack overflow checking is performed if
@@ -168,8 +133,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-    audio_task_init();
-    uart_task_init(&g_uart2_hal_ops);
+//    app_boot_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -193,8 +157,6 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-    audio_task_create();
-    uart_task_create();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -215,92 +177,12 @@ void StartDefaultTask(void *argument)
   /* init code for USB_HOST */
 //   MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
-    static media_src_t s_src;
-    static FILINFO     s_files[16];
-    static char        s_path[32];
-    static char        s_log_buf[64];
-    static uint32_t    s_play_count = 0;
-    static uint16_t    s_song_counts[16];
-    uint8_t s_file_count = 0;
-    uint8_t s_play_idx   = 0xFF;
-    (void)argument;
-
-    if (sd_manager_mount(USERPath) != SD_OK)
+    vTaskSuspendAll();
+    app_boot_init();
+    xTaskResumeAll();
+    vTaskDelete(NULL);
+    for(;;)
     {
-#ifdef USER_DEBUG_LOG
-        log_e("[sd] mount failed");
-#endif
-        for (;;)
-        {
-            osDelay(1000);
-        }
-    }
-
-//    sd_manager_list_dir("0:/", s_files, 16, &s_file_count);
-    sd_manager_list_dir(USERPath, s_files, 16, &s_file_count);
-#ifdef USER_DEBUG_LOG
-    log_i("[sd] mount ok, %d files", s_file_count);
-    for (uint8_t i = 0; i < s_file_count; i++)
-    {
-        log_i("[sd] %s  %lu B", s_files[i].fname, s_files[i].fsize);
-    }
-#endif
-
-    s_play_idx = find_next_mp3(s_files, s_file_count, 0);
-    if (s_play_idx != 0xFF)
-    {
-        snprintf(s_path, sizeof(s_path), "0:/%s", s_files[s_play_idx].fname);
-        if (sd_manager_open(s_path) == SD_OK)
-        {
-            sd_manager_get_src(&s_src);
-            mp3_player_start(&s_src);
-            audio_task_signal();
-#ifdef USER_DEBUG_LOG
-            log_i("[sd] playing %s", s_files[s_play_idx].fname);
-#endif // end of USER_DEBUG_LOG
-        }
-    }
-
-    /* Infinite loop */
-    for (;;)
-    {
-        if (s_play_idx != 0xFF && !mp3_player_is_playing())
-        {
-            sd_manager_close();
-            s_play_count++;
-            s_song_counts[s_play_idx]++;
-            int log_len = snprintf(s_log_buf, sizeof(s_log_buf),
-                                   "[%u] %s %lu B (x%u)\r\n",
-                                   s_play_count,
-                                   s_files[s_play_idx].fname,
-                                   s_files[s_play_idx].fsize,
-                                   s_song_counts[s_play_idx]);
-            if (log_len > 0 && sd_manager_open_write("0:/mp3log.txt") == SD_OK)
-            {
-                sd_manager_write((const uint8_t *)s_log_buf,
-                                 (uint32_t)log_len, NULL);
-                sd_manager_close_write();
-            }
-            uint8_t next = find_next_mp3(s_files, s_file_count,
-                                         (uint8_t)((s_play_idx + 1U) %
-                                                    s_file_count));
-            if (next != 0xFF)
-            {
-                s_play_idx = next;
-                snprintf(s_path, sizeof(s_path), "0:/%s",
-                         s_files[s_play_idx].fname);
-                if (sd_manager_open(s_path) == SD_OK)
-                {
-                    sd_manager_get_src(&s_src);
-                    mp3_player_start(&s_src);
-                    audio_task_signal();
-#ifdef USER_DEBUG_LOG
-                    log_i("[sd] playing %s", s_files[s_play_idx].fname);
-#endif // end of USER_DEBUG_LOG
-                }
-            }
-        }
-        osDelay(500);
     }
   /* USER CODE END StartDefaultTask */
 }

@@ -19,31 +19,23 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
-
-/* typedef ------------------------------------------------------------------*/
-typedef enum
-{
-    UART_OK = 0,
-    UART_ERR_BUSY,
-    UART_ERR_TIMEOUT,
-    UART_ERR,
-} uart_status_t;
+#include "platform_error.h"
 
 /* One-way upward notification — no return value, platform never waits on    */
 /* upper layer response.                                                      */
-typedef void (*uart_notify_fn_t)(void *p_ctx);
+typedef void (*plat_uart_notify_fn_t)(void *p_ctx);
 
 /* Ops table: the contract any MCU platform layer must fulfill.              */
 /* Switch MCU = rewrite the implementor; this struct stays the same.         */
 typedef struct
 {
-    uart_status_t  (*pf_send)(const uint8_t *p_buf, uint16_t len);
-    void           (*pf_set_notify)(void             *p_ctx,
-                                    uart_notify_fn_t  pf_notify);
+    platform_err_t (*pf_send)(const uint8_t *p_buf, uint16_t len);
+    void           (*pf_set_notify)(void                  *p_ctx,
+                                    plat_uart_notify_fn_t  pf_notify);
     uint16_t       (*pf_available)(void);
     const uint8_t *(*pf_peek)(uint16_t *p_len);
     void           (*pf_consume)(uint16_t len);
-} uart_hal_ops_t;
+} plat_uart_ops_t;
 
 #ifdef __cplusplus
 }

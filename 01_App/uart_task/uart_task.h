@@ -14,9 +14,9 @@ extern "C"
 {
 #endif
 
-#include "bsp_uart.h"
+#include "plat_uart.h"
 
-void uart_task_init(uart_hal_ops_t *p_ops);
+void uart_task_init(plat_uart_ops_t *p_ops);
 void uart_task_create(void);
 
 #ifdef __cplusplus

@@ -20,17 +20,7 @@ extern "C"
 #include <stdint.h>
 #include "ff.h"
 #include "media_src.h"
-/* typedef ------------------------------------------------------------------*/
-typedef enum
-{
-    SD_OK = 0,
-    SD_ERR_NOT_MOUNTED,
-    SD_ERR_MOUNT,
-    SD_ERR_OPEN,
-    SD_ERR_READ,
-    SD_ERR_WRITE,
-    SD_ERR_NOT_OPEN,
-} sd_status_t;
+#include "platform_error.h"
 
 /* define   -----------------------------------------------------------------*/
 #define SD_DRIVER_LETTER "0:"
@@ -38,12 +28,12 @@ typedef enum
 /**
  * @brief            :  [sd_manager_mount]
  */
-sd_status_t sd_manager_mount(const char *path);
+platform_err_t sd_manager_mount(const char *path);
 /**
  * @brief            :  [sd_manager_open]
  * @param[in]        :  [const char *p_path]
  */
-sd_status_t sd_manager_open(const char *p_path);
+platform_err_t sd_manager_open(const char *p_path);
 /**
  * @brief            :  [sd_manager_close]
  */
@@ -51,7 +41,7 @@ void sd_manager_close(void);
 /**
  * @brief            :  [sd_manager_get_src]
  */
-sd_status_t sd_manager_get_src(media_src_t *p_src);
+platform_err_t sd_manager_get_src(media_src_t *p_src);
 /**
  * @brief            :  [sd_manager_list_dir]
  * @param[in]        :  [const char *p_path]   directory path, e.g. "0:/"
@@ -59,7 +49,7 @@ sd_status_t sd_manager_get_src(media_src_t *p_src);
  * @param[in]        :  [uint8_t max_count]     capacity of p_list
  * @param[out]       :  [uint8_t *p_found]      actual number of files found
  */
-sd_status_t sd_manager_list_dir(const char *p_path,
+platform_err_t sd_manager_list_dir(const char *p_path,
                                  FILINFO    *p_list,
                                  uint8_t     max_count,
                                  uint8_t    *p_found);
@@ -68,7 +58,7 @@ sd_status_t sd_manager_list_dir(const char *p_path,
  * @param[in]        :  [const char *p_path]  file path, e.g. "0:/recv.bin"
  * @note             :  FA_OPEN_APPEND: create if not exist, append if exist
  */
-sd_status_t sd_manager_open_write(const char *p_path);
+platform_err_t sd_manager_open_write(const char *p_path);
 /**
  * @brief            :  [sd_manager_write]
  * @param[in]        :  [const uint8_t *p_buf]   data to write
@@ -76,7 +66,7 @@ sd_status_t sd_manager_open_write(const char *p_path);
  *                                                avoid blocking the read path)
  * @param[out]       :  [uint32_t *p_written]     actual bytes written, or NULL
  */
-sd_status_t sd_manager_write(const uint8_t *p_buf,
+platform_err_t sd_manager_write(const uint8_t *p_buf,
                               uint32_t       len,
                               uint32_t      *p_written);
 /**

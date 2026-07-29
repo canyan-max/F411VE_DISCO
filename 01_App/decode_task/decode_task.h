@@ -1,24 +1,25 @@
 /**
  ******************************************************************************
- *@file    :   audio_task.h
- *@brief   :   audioTask — MP3 decode scheduling task.
+ *@file    :   decode_task.h
+ *@brief   :   decodeTask — MP3 decode + DMA fill scheduling task.
  *@version :   V1.0
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-#ifndef AUDIO_TASK_H
-#define AUDIO_TASK_H
+#ifndef DECODE_TASK_H
+#define DECODE_TASK_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-void audio_task_create(void);
-void audio_task_signal(void);
-void audio_task_init(void);
+void decode_task_init(void);
+void decode_task_create(void);
+void decode_task_signal(void);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* AUDIO_TASK_H */
+#endif /* DECODE_TASK_H */

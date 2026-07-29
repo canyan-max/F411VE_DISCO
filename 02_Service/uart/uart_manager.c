@@ -28,7 +28,7 @@ static void uart_mgr_on_hal_data(void *p_ctx)
 
 /* exported functions -------------------------------------------------------*/
 void uart_manager_setup(uart_manager_t      *p_inst,
-                         uart_hal_ops_t      *p_ops,
+                         plat_uart_ops_t     *p_ops,
                          uart_mgr_notify_fn_t pf_task_notify,
                          void                *p_task_ctx)
 {
@@ -38,9 +38,9 @@ void uart_manager_setup(uart_manager_t      *p_inst,
     p_ops->pf_set_notify(p_inst, uart_mgr_on_hal_data);
 }
 
-uart_status_t uart_manager_send(uart_manager_t *p_inst,
-                                 const uint8_t  *p_buf,
-                                 uint16_t        len)
+platform_err_t uart_manager_send(uart_manager_t *p_inst,
+                                  const uint8_t  *p_buf,
+                                  uint16_t        len)
 {
     return p_inst->p_ops->pf_send(p_buf, len);
 }

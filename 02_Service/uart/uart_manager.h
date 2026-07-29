@@ -17,7 +17,7 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "bsp_uart.h"
+#include "plat_uart.h"
 
 /* typedef ------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@ typedef void (*uart_mgr_notify_fn_t)(void *p_ctx);
 
 typedef struct
 {
-    uart_hal_ops_t      *p_ops;
+    plat_uart_ops_t     *p_ops;
     uart_mgr_notify_fn_t pf_task_notify;
     void                *p_task_ctx;
 } uart_manager_t;
@@ -40,11 +40,11 @@ typedef struct
  *         touches uart_notify_fn_t directly.
  */
 void           uart_manager_setup(uart_manager_t      *p_inst,
-                                   uart_hal_ops_t      *p_ops,
+                                   plat_uart_ops_t     *p_ops,
                                    uart_mgr_notify_fn_t pf_task_notify,
                                    void                *p_task_ctx);
 
-uart_status_t  uart_manager_send(uart_manager_t *p_inst,
+platform_err_t uart_manager_send(uart_manager_t *p_inst,
                                   const uint8_t  *p_buf,
                                   uint16_t        len);
 

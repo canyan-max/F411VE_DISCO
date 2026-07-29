@@ -17,10 +17,10 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "bsp_uart.h"
+#include "plat_uart.h"
 
 /* variables ----------------------------------------------------------------*/
-extern uart_hal_ops_t g_uart2_hal_ops;
+extern plat_uart_ops_t g_uart2_hal_ops;
 
 #ifdef __cplusplus
 }

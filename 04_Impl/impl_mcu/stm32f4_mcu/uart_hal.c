@@ -23,17 +23,17 @@ static uint8_t          s_dma_buf[UART2_DMA_BUF_SIZE];
 static kfifo_t          s_kfifo;
 static uint16_t         s_prev_pos   ;
 static void            *s_notify_ctx ;
-static uart_notify_fn_t s_notify     ;
+static plat_uart_notify_fn_t s_notify     ;
 
 /* private functions --------------------------------------------------------*/
-static uart_status_t uart2_send(const uint8_t *p_buf, uint16_t len)
+static platform_err_t uart2_send(const uint8_t *p_buf, uint16_t len)
 {
     HAL_StatusTypeDef ret = HAL_UART_Transmit(&huart2, (uint8_t *)p_buf,
                                                len, HAL_MAX_DELAY);
-    return (ret == HAL_OK) ? UART_OK : UART_ERR;
+    return (ret == HAL_OK) ? PLATFORM_ERR_OK : PLATFORM_ERR_FAIL;
 }
 
-static void uart2_set_notify(void *p_ctx, uart_notify_fn_t pf_notify)
+static void uart2_set_notify(void *p_ctx, plat_uart_notify_fn_t pf_notify)
 {
     s_notify_ctx = p_ctx;
     s_notify     = pf_notify;
@@ -70,7 +70,7 @@ static void uart2_consume(uint16_t len)
 }
 
 /* exported variables -------------------------------------------------------*/
-uart_hal_ops_t g_uart2_hal_ops = {
+plat_uart_ops_t g_uart2_hal_ops = {
     .pf_send       = uart2_send,
     .pf_set_notify = uart2_set_notify,
     .pf_available  = uart2_available,

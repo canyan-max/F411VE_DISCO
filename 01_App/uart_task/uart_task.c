@@ -56,7 +56,7 @@ static void StartUartTask(void *argument)
 }
 
 /* exported functions -------------------------------------------------------*/
-void uart_task_init(uart_hal_ops_t *p_ops)
+void uart_task_init(plat_uart_ops_t *p_ops)
 {
     s_sem = osSemaphoreNew(1U, 0U, NULL);
     uart_manager_setup(&s_uart2_mgr, p_ops, uart2_notify, s_sem);

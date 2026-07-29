@@ -48,32 +48,32 @@ static uint32_t sd_src_read(void    *p_ctx,
 /**
  * @brief            :  [sd_manager_mount]
  */
-sd_status_t sd_manager_mount(const char * path)
+platform_err_t sd_manager_mount(const char * path)
 {
     FRESULT fr = f_mount(&s_fs, path, 1);
     if (fr != FR_OK)
     {
-        return SD_ERR_MOUNT;
+        return PLATFORM_ERR_FAIL;
     }
     s_mounted = 1;
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 /**
  * @brief            :  [sd_manager_open]
  * @param[in]        :  [const char *p_path]
  */
-sd_status_t sd_manager_open(const char *p_path)
+platform_err_t sd_manager_open(const char *p_path)
 {
     if (!s_mounted)
     {
-        return SD_ERR_NOT_MOUNTED;
+        return PLATFORM_ERR_NOT_INIT;
     }
     FRESULT fr = f_open(&s_file, p_path, FA_READ);
     if (fr != FR_OK)
     {
-        return SD_ERR_OPEN;
+        return PLATFORM_ERR_FAIL;
     }
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 /**
  * @brief            :  [sd_manager_close]
@@ -85,25 +85,25 @@ void sd_manager_close(void)
 /**
  * @brief            :  [sd_manager_get_src]
  */
-sd_status_t sd_manager_get_src(media_src_t *p_src)
+platform_err_t sd_manager_get_src(media_src_t *p_src)
 {
     p_src->pf_read    = sd_src_read;
     p_src->p_ctx      = &s_file;
     p_src->total_size = (uint32_t)f_size(&s_file);
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 
 /**
  * @brief            :  [sd_manager_list_dir]
  */
-sd_status_t sd_manager_list_dir(const char *p_path,
+platform_err_t sd_manager_list_dir(const char *p_path,
                                  FILINFO    *p_list,
                                  uint8_t     max_count,
                                  uint8_t    *p_found)
 {
     if (!s_mounted)
     {
-        return SD_ERR_NOT_MOUNTED;
+        return PLATFORM_ERR_NOT_INIT;
     }
 
     DIR     dir;
@@ -113,7 +113,7 @@ sd_status_t sd_manager_list_dir(const char *p_path,
     fr = f_opendir(&dir, p_path);
     if (fr != FR_OK)
     {
-        return SD_ERR_OPEN;
+        return PLATFORM_ERR_FAIL;
     }
 
     while (count < max_count)
@@ -135,49 +135,49 @@ sd_status_t sd_manager_list_dir(const char *p_path,
     {
         *p_found = count;
     }
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 
 /**
  * @brief            :  [sd_manager_open_write]
  */
-sd_status_t sd_manager_open_write(const char *p_path)
+platform_err_t sd_manager_open_write(const char *p_path)
 {
     if (!s_mounted)
     {
-        return SD_ERR_NOT_MOUNTED;
+        return PLATFORM_ERR_NOT_INIT;
     }
     FRESULT fr = f_open(&s_wfile, p_path, FA_WRITE | FA_OPEN_APPEND);
     if (fr != FR_OK)
     {
-        return SD_ERR_OPEN;
+        return PLATFORM_ERR_FAIL;
     }
     s_wfile_open = 1;
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 
 /**
  * @brief            :  [sd_manager_write]
  */
-sd_status_t sd_manager_write(const uint8_t *p_buf,
+platform_err_t sd_manager_write(const uint8_t *p_buf,
                               uint32_t       len,
                               uint32_t      *p_written)
 {
     if (!s_wfile_open)
     {
-        return SD_ERR_NOT_OPEN;
+        return PLATFORM_ERR_NOT_INIT;
     }
     UINT    bw;
     FRESULT fr = f_write(&s_wfile, p_buf, (UINT)len, &bw);
     if (fr != FR_OK)
     {
-        return SD_ERR_WRITE;
+        return PLATFORM_ERR_FAIL;
     }
     if (p_written != NULL)
     {
         *p_written = (uint32_t)bw;
     }
-    return SD_OK;
+    return PLATFORM_ERR_OK;
 }
 
 /**
