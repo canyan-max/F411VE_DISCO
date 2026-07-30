@@ -15,7 +15,7 @@
 
 #ifdef USER_DEBUG_LOG
 #include "elog.h"
-#endif
+#endif // end of USER_DEBUG_LOG
 
 // #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_ONLY_MP3     1
@@ -50,6 +50,7 @@ static int16_t             s_dma_buf[PCM_BUF_LEN];
 static uint8_t             s_in_buf[MP3_IN_BUF_SIZE];
 static volatile fill_req_t s_fill_req    = FILL_NONE;
 static volatile uint8_t    s_running     = 0;
+static volatile uint8_t    s_paused      = 0;
 static volatile uint8_t    s_dma_running = 0;
 static volatile uint8_t    s_codec_awake = 0;
 static volatile uint8_t    s_start_req   = 0;
@@ -161,7 +162,7 @@ void mp3_player_stop(void)
     s_dma_running = 0;
     audio_out_stop();
 #ifdef USER_DEBUG_LOG
-    log_i("stopped at offset=%lu", s_offset);
+    log_i("stopped at offset=%u", s_offset);
 #endif
 }
 
@@ -178,7 +179,7 @@ void mp3_player_soft_stop(void)
     MP3_PLAYER_EXIT_CRITICAL();
     audio_out_soft_stop();
 #ifdef USER_DEBUG_LOG
-    log_i("soft_stop at offset=%lu", s_offset);
+    log_i("soft_stop at offset=%u", s_offset);
 #endif
 }
 
@@ -189,17 +190,19 @@ uint8_t mp3_player_is_playing(void)
 
 void mp3_player_pause(void)
 {
+    s_paused  = 1;
     s_running = 0;
 #ifdef USER_DEBUG_LOG
-    log_i("pause at offset=%lu", s_offset);
+    log_i("pause at offset=%u", s_offset);
 #endif
 }
 
 void mp3_player_resume(void)
 {
+    s_paused  = 0;
     s_running = 1;
 #ifdef USER_DEBUG_LOG
-    log_i("resume at offset=%lu", s_offset);
+    log_i("resume at offset=%u", s_offset);
 #endif
 }
 
@@ -212,6 +215,7 @@ void mp3_player_process(void)
         s_offset      = 0;
         s_in_fill     = 0;
         s_running     = 1;
+        s_paused      = 0;
         s_codec_awake = 1;
         s_fill_req    = FILL_NONE;
 
@@ -243,13 +247,8 @@ void mp3_player_process(void)
                                               : &s_dma_buf[PCM_HALF_LEN];
     decode_half(p_buf);
 
-    if(!s_running)
+    if(!s_running && !s_paused)
     {
-        //        int16_t *p_other = (req == FILL_FIRST_HALF) ?
-        //        &s_dma_buf[PCM_HALF_LEN]
-        //                                                    : &s_dma_buf[0];
-
-        //        memset(p_other, 0, PCM_HALF_LEN * sizeof(int16_t));
         mp3_player_soft_stop();
     }
 }

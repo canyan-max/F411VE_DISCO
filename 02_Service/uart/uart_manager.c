@@ -13,14 +13,13 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "uart_manager.h"
-
 /* private functions --------------------------------------------------------*/
 
-/* HAL calls this (from ISR) — manager owns this callback, task never sees it */
+/* HAL calls this (from ISR) — manager owns this callback,task never sees it*/
 static void uart_mgr_on_hal_data(void *p_ctx)
 {
     uart_manager_t *p_inst = (uart_manager_t *)p_ctx;
-    if (p_inst->pf_task_notify != NULL)
+    if(p_inst->pf_task_notify != NULL)
     {
         p_inst->pf_task_notify(p_inst->p_task_ctx);
     }
@@ -28,19 +27,18 @@ static void uart_mgr_on_hal_data(void *p_ctx)
 
 /* exported functions -------------------------------------------------------*/
 void uart_manager_setup(uart_manager_t      *p_inst,
-                         plat_uart_ops_t     *p_ops,
-                         uart_mgr_notify_fn_t pf_task_notify,
-                         void                *p_task_ctx)
+                        plat_uart_ops_t     *p_ops,
+                        uart_mgr_notify_fn_t pf_task_notify,
+                        void                *p_task_ctx)
 {
-    p_inst->p_ops         = p_ops;
+    p_inst->p_ops          = p_ops;
     p_inst->pf_task_notify = pf_task_notify;
-    p_inst->p_task_ctx    = p_task_ctx;
+    p_inst->p_task_ctx     = p_task_ctx;
     p_ops->pf_set_notify(p_inst, uart_mgr_on_hal_data);
 }
 
-platform_err_t uart_manager_send(uart_manager_t *p_inst,
-                                  const uint8_t  *p_buf,
-                                  uint16_t        len)
+platform_err_t
+uart_manager_send(uart_manager_t *p_inst, const uint8_t *p_buf, uint16_t len)
 {
     return p_inst->p_ops->pf_send(p_buf, len);
 }
