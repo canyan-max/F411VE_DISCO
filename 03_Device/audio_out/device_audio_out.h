@@ -1,15 +1,15 @@
 /**
  ******************************************************************************
- * @file    : audio_out.h
+ * @file    : device_audio_out.h
  * @brief   : Audio output device abstraction.
  *            Stable, BSP-agnostic interface. No BSP types appear here.
- *            To swap the codec, only audio_out.c needs updating.
+ *            To swap the codec, only device_audio_out.c needs updating.
  * @version : V1.0  2026
  * @note    : 1 tab == 4 spaces!
  ******************************************************************************
  */
-#ifndef AUDIO_OUT_H
-#define AUDIO_OUT_H
+#ifndef DEVICE_AUDIO_OUT_H
+#define DEVICE_AUDIO_OUT_H
 
 #ifdef __cplusplus
 extern "C"
@@ -47,4 +47,4 @@ void           audio_out_tx_cplt(void);
 }
 #endif
 
-#endif /* AUDIO_OUT_H */
+#endif /* DEVICE_AUDIO_OUT_H */

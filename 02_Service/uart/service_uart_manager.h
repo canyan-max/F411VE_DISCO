@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   uart_manager.h
+ *@file    :   service_uart_manager.h
  *@brief   :   UART service layer — owns the HAL binding and task notification.
  *             HAL calls manager's internal callback; manager notifies the task.
  *             Task registers with manager only; task never sees uart_hal types.
@@ -8,8 +8,8 @@
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-#ifndef UART_MANAGER_H
-#define UART_MANAGER_H
+#ifndef SERVICE_UART_MANAGER_H
+#define SERVICE_UART_MANAGER_H
 
 #ifdef __cplusplus
 extern "C"
@@ -17,7 +17,7 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "plat_uart.h"
+#include "bsp_uart.h"
 
 /* typedef ------------------------------------------------------------------*/
 
@@ -62,4 +62,4 @@ void           uart_manager_consume(uart_manager_t *p_inst, uint16_t len);
 }
 #endif
 
-#endif /* UART_MANAGER_H */
+#endif /* SERVICE_UART_MANAGER_H */

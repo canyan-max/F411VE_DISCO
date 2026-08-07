@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file               :   mp3_player.c
+ *@file               :   service_mp3_player.c
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
@@ -10,8 +10,8 @@
 /* Includes -----------------------------------------------------------------*/
 #include <string.h>
 #include <stddef.h>
-#include "mp3_player.h"
-#include "audio_out.h"
+#include "service_mp3_player.h"
+#include "device_audio_out.h"
 
 #ifdef USER_DEBUG_LOG
 #include "elog.h"

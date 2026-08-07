@@ -14,9 +14,9 @@
 #include <stdio.h>
 #include "cmsis_os.h"
 #include "fatfs.h"
-#include "media_src.h"
-#include "mp3_player.h"
-#include "sd_manager.h"
+#include "service_media_src.h"
+#include "service_mp3_player.h"
+#include "service_sd_manager.h"
 #include "decode_task.h"
 #include "player_task.h"
 #ifdef USER_DEBUG_LOG

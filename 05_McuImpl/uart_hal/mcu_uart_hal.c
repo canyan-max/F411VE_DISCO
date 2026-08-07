@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   uart_hal.c
+ *@file    :   mcu_uart_hal.c
  *@brief   :   STM32 USART2 BSP — Circular DMA into own kfifo, self-contained.
  *             TX: blocking (HAL_UART_Transmit)
  *             RX: Circular DMA + IDLE interrupt; ISR reads NDTR directly;
@@ -11,7 +11,7 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "uart_hal.h"
+#include "mcu_uart_hal.h"
 #include "usart.h"
 #include "kfifo.h"
 

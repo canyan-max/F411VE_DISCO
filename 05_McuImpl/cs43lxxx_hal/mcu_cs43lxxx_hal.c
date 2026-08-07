@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file               :   cs43lxxx_hal.c
+ *@file               :   mcu_cs43lxxx_hal.c
  *
  *@brief              :   Provide the HAL APIs of description.
  *
@@ -8,12 +8,12 @@
  *
  *@note               :   1 tab == 4 spaces!  2026
  *
- *@pardependencies    :   cs43lxxx_hal.c
+ *@pardependencies    :   mcu_cs43lxxx_hal.c
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "cs43lxxx_hal.h"     /* cs43lxxx_hal lib header file. */
+#include "mcu_cs43lxxx_hal.h" /* mcu_cs43lxxx_hal lib header file. */
 #include "i2c.h"              /* i2c lib header file. */
 #include "i2s.h"              /* i2s lib header file. */
 #include "bsp_cs43lxxx_drv.h" /* bsp_cs43lxxx_drv lib header file. */

@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   sd_manager.c
+ *@file    :   service_sd_manager.c
  *@brief   :   SD card resource manager.
  *@version :   V1.0
  *@note    :   1 tab == 4 spaces!  2026
@@ -8,7 +8,7 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "sd_manager.h"
+#include "service_sd_manager.h"
 #include "fatfs.h"
 
 /* private variables --------------------------------------------------------*/

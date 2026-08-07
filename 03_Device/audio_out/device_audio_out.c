@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    : audio_out.c
+ * @file    : device_audio_out.c
  * @brief   : Audio output device abstraction.
  *            All BSP-specific references are confined to this file.
  *            To swap the codec, only this file needs updating.
@@ -10,8 +10,8 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "audio_out.h"
-#include "cs43lxxx_hal.h"
+#include "device_audio_out.h"
+#include "mcu_cs43lxxx_hal.h"
 #include "bsp_cs43lxxx_drv.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"

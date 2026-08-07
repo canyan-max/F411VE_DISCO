@@ -15,7 +15,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "uart_task.h"
-#include "uart_manager.h"
+#include "service_uart_manager.h"
 #include "player_task.h"
 
 #ifdef USER_DEBUG_LOG

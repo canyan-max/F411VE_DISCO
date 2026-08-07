@@ -1,15 +1,16 @@
 /**
  ******************************************************************************
- *@file    :   uart_hal.h
+ *@file    :   mcu_uart_hal.h
  *@brief   :   STM32F4 UART platform implementation — instance declaration.
  *             Types are defined in bsp_uart.h (stable interface contract).
- *             Switch MCU: replace uart_hal.c + this file; bsp_uart.h unchanged.
+ *             Switch MCU: replace mcu_uart_hal.c + this file; bsp_uart.h
+ *             unchanged.
  *@version :   V2.0
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-#ifndef UART_HAL_H
-#define UART_HAL_H
+#ifndef MCU_UART_HAL_H
+#define MCU_UART_HAL_H
 
 #ifdef __cplusplus
 extern "C"
@@ -17,7 +18,7 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "plat_uart.h"
+#include "bsp_uart.h"
 
 /* variables ----------------------------------------------------------------*/
 extern plat_uart_ops_t g_uart2_hal_ops;
@@ -26,4 +27,4 @@ extern plat_uart_ops_t g_uart2_hal_ops;
 }
 #endif
 
-#endif /* UART_HAL_H */
+#endif /* MCU_UART_HAL_H */

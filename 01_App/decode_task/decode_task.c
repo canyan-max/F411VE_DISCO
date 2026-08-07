@@ -12,8 +12,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
-#include "audio_out.h"
-#include "mp3_player.h"
+#include "device_audio_out.h"
+#include "service_mp3_player.h"
 #include "decode_task.h"
 #ifdef USER_DEBUG_LOG
 #include "elog.h"

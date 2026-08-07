@@ -1,14 +1,14 @@
 /**
  ******************************************************************************
- *@file               :   mp3_player.h
+ *@file               :   service_mp3_player.h
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef MP3_PLAYER_H
-#define MP3_PLAYER_H
+#ifndef SERVICE_MP3_PLAYER_H
+#define SERVICE_MP3_PLAYER_H
 
 #ifdef __cplusplus
 extern "C"
@@ -16,7 +16,7 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "media_src.h"
+#include "service_media_src.h"
 
 /* functions ----------------------------------------------------------------*/
 void    mp3_player_start(const media_src_t *p_src);
@@ -35,4 +35,4 @@ void    mp3_player_on_cplt(void);
 }
 #endif
 
-#endif /* MP3_PLAYER_H */
+#endif /* SERVICE_MP3_PLAYER_H */

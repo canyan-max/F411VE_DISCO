@@ -1,17 +1,17 @@
 /**
  ******************************************************************************
- *@file               :   cs43lxxx_hal.h
- * 
+ *@file               :   mcu_cs43lxxx_hal.h
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef CS43LXXX_HAL_H
-#define CS43LXXX_HAL_H
+#ifndef MCU_CS43LXXX_HAL_H
+#define MCU_CS43LXXX_HAL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,4 +38,4 @@ extern cs43xxx_drv_t      g_cs43l22_drv;
 }
 #endif
 
-#endif /* CS43LXXX_HAL_H */
+#endif /* MCU_CS43LXXX_HAL_H */

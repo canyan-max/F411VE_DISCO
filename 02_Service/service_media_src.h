@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   media_src.h
+ *@file    :   service_media_src.h
  *@brief   :   Generic offset-based read interface for media data sources.
  *             Any storage backend (SD card, SPI flash, USB, RAM array) can
  *             implement pf_read and hand the struct to a decoder.
@@ -8,8 +8,8 @@
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-#ifndef MEDIA_SRC_H
-#define MEDIA_SRC_H
+#ifndef SERVICE_MEDIA_SRC_H
+#define SERVICE_MEDIA_SRC_H
 
 #ifdef __cplusplus
 extern "C"
@@ -32,4 +32,4 @@ typedef struct
 }
 #endif
 
-#endif /* MEDIA_SRC_H */
+#endif /* SERVICE_MEDIA_SRC_H */

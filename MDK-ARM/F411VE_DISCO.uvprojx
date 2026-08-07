@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE,USER_DEBUG_LOG,USER_IDLE_LOG</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../USB_HOST/App;../USB_HOST/Target;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Host_Library/Core/Inc;../Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/MP3;../Middlewares/EasyLog/Inc;../Middlewares/EasyLog/Src;../Middlewares/RTT;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Middlewares/Third_Party/FatFs/src;../Middlewares/Kfifo;../FATFS/Target;../FATFS/App;..\01_App;..\01_App\player_task;..\01_App\uart_task;..\01_App\decode_task;..\02_Service;..\02_Service\audio;..\02_Service\player;..\02_Service\sd;..\02_Service\uart;..\03_Platform\platform_bsp\cs43l22;..\03_Platform\platform_mcu;..\03_Platform\platform_common;..\03_Platform\platform_device\audio_out;..\04_Impl\impl_mcu\cs43lxxx_hal;..\04_Impl\impl_mcu\dwt;..\04_Impl\impl_mcu\stm32f4_mcu</IncludePath>
+              <IncludePath>../Core/Inc;../USB_HOST/App;../USB_HOST/Target;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Host_Library/Core/Inc;../Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../Middlewares/MP3;../Middlewares/EasyLog/Inc;../Middlewares/EasyLog/Src;../Middlewares/RTT;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Middlewares/Third_Party/FatFs/src;../Middlewares/Kfifo;../FATFS/Target;../FATFS/App;..\00_Common;..\01_App;..\01_App\player_task;..\01_App\uart_task;..\01_App\decode_task;..\02_Service;..\02_Service\player;..\02_Service\sd;..\02_Service\uart;..\03_Device\audio_out;..\04_Bsp\cs43l22;..\04_Bsp\uart;..\04_Bsp\dwt;..\05_McuImpl\cs43lxxx_hal;..\05_McuImpl\uart_hal</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2524,6 +2524,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>00_Common</GroupName>
+          <Files>
+            <File>
+              <FileName>platform_error.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\00_Common\platform_error.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>01_App</GroupName>
           <Files>
             <File>
@@ -2552,74 +2562,64 @@
           <GroupName>02_Service</GroupName>
           <Files>
             <File>
-              <FileName>mp3_player.c</FileName>
+              <FileName>service_mp3_player.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\02_Service\player\mp3_player.c</FilePath>
+              <FilePath>..\02_Service\player\service_mp3_player.c</FilePath>
             </File>
             <File>
-              <FileName>sd_manager.c</FileName>
+              <FileName>service_sd_manager.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\02_Service\sd\sd_manager.c</FilePath>
+              <FilePath>..\02_Service\sd\service_sd_manager.c</FilePath>
             </File>
             <File>
-              <FileName>uart_manager.c</FileName>
+              <FileName>service_uart_manager.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\02_Service\uart\uart_manager.c</FilePath>
+              <FilePath>..\02_Service\uart\service_uart_manager.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>03_Platform/platform_bsp</GroupName>
+          <GroupName>03_Device</GroupName>
+          <Files>
+            <File>
+              <FileName>device_audio_out.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\03_Device\audio_out\device_audio_out.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>04_Bsp/cs43l22</GroupName>
           <Files>
             <File>
               <FileName>bsp_cs43lxxx_drv.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\03_Platform\platform_bsp\cs43l22\bsp_cs43lxxx_drv.c</FilePath>
+              <FilePath>..\04_Bsp\cs43l22\bsp_cs43lxxx_drv.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>03_Platform/platform_mcu</GroupName>
+          <GroupName>04_Bsp/uart</GroupName>
           <Files>
             <File>
-              <FileName>plat_uart.h</FileName>
+              <FileName>bsp_uart.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\03_Platform\platform_mcu\plat_uart.h</FilePath>
+              <FilePath>..\04_Bsp\uart\bsp_uart.h</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>03_Platform/platform_common</GroupName>
+          <GroupName>05_McuImpl</GroupName>
           <Files>
             <File>
-              <FileName>platform_error.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\03_Platform\platform_common\platform_error.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>03_Platform/platform_device</GroupName>
-          <Files>
-            <File>
-              <FileName>audio_out.c</FileName>
+              <FileName>mcu_cs43lxxx_hal.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\03_Platform\platform_device\audio_out\audio_out.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>04_Impl/impl_mcu</GroupName>
-          <Files>
-            <File>
-              <FileName>cs43lxxx_hal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\impl_mcu\cs43lxxx_hal\cs43lxxx_hal.c</FilePath>
+              <FilePath>..\05_McuImpl\cs43lxxx_hal\mcu_cs43lxxx_hal.c</FilePath>
             </File>
             <File>
-              <FileName>uart_hal.c</FileName>
+              <FileName>mcu_uart_hal.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\04_Impl\impl_mcu\stm32f4_mcu\uart_hal.c</FilePath>
+              <FilePath>..\05_McuImpl\uart_hal\mcu_uart_hal.c</FilePath>
             </File>
           </Files>
         </Group>

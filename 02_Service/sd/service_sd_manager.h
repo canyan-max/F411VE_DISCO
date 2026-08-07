@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   sd_manager.h
+ *@file    :   service_sd_manager.h
  *@brief   :   SD card resource manager.
  *             Owns the FATFS instance and file handles. Callers never touch
  *             FatFS types directly — use the API below instead.
@@ -8,8 +8,8 @@
  *@note    :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-#ifndef SD_MANAGER_H
-#define SD_MANAGER_H
+#ifndef SERVICE_SD_MANAGER_H
+#define SERVICE_SD_MANAGER_H
 
 #ifdef __cplusplus
 extern "C"
@@ -19,7 +19,7 @@ extern "C"
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
 #include "ff.h"
-#include "media_src.h"
+#include "service_media_src.h"
 #include "platform_error.h"
 
 /* define   -----------------------------------------------------------------*/
@@ -78,4 +78,4 @@ void sd_manager_close_write(void);
 }
 #endif
 
-#endif /* SD_MANAGER_H */
+#endif /* SERVICE_SD_MANAGER_H */

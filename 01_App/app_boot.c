@@ -11,7 +11,7 @@
 
 /* Includes -----------------------------------------------------------------*/
 #include "app_boot.h"
-#include "uart_hal.h"
+#include "mcu_uart_hal.h"
 #include "decode_task.h"
 #include "player_task.h"
 #include "uart_task.h"

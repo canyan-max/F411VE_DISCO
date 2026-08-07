@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- *@file    :   uart_manager.c
+ *@file    :   service_uart_manager.c
  *@brief   :   UART service layer — intermediates between HAL and task.
  *             HAL calls uart_mgr_on_hal_data (manager-owned callback).
  *             Manager then notifies the task via pf_task_notify.
@@ -12,7 +12,7 @@
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
-#include "uart_manager.h"
+#include "service_uart_manager.h"
 /* private functions --------------------------------------------------------*/
 
 /* HAL calls this (from ISR) — manager owns this callback,task never sees it*/
